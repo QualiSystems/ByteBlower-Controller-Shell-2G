@@ -1,0 +1,23 @@
+description: 'ByteBlower Controller service shell'
+
+imports:
+- cloudshell_standard: cloudshell_traffic_generator_controller_standard_2_0_0.yaml
+metadata:
+  template_author: Quali
+  template_icon: shell-icon.png
+  template_name: ByteBlower Controller Shell 2G
+  template_version: 2.0.0
+node_types:
+  vendor.resource.ByteBlower Controller Shell 2G:
+    artifacts:
+      driver:
+        file: ByteBlowerControllerShell2GDriver.zip
+        type: tosca.artifacts.File
+      icon:
+        file: shell-icon.png
+        type: tosca.artifacts.File
+    capabilities:
+      concurrent_execution:
+        type: cloudshell.capabilities.SupportConcurrentCommands
+    derived_from: cloudshell.nodes.TrafficGeneratorController
+tosca_definitions_version: tosca_simple_yaml_1_0
