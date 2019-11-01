@@ -31,7 +31,7 @@ class ByteBlowerControllerShell2GDriver(TrafficControllerDriver):
 
     def get_rt_statistics(self, context):
         """ Get real time statistics for all ports and endpoints. """
-        pass
+        return self.handler.get_rt_statistics()
 
     def get_statistics(self, context, output_type):
         """ Get statistics.

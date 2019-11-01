@@ -40,7 +40,12 @@ class TestByteBlowerControllerDriver(object):
 
     def test_run_traffic(self):
         self._load_config('test_config')
-        self.driver.start_traffic(self.context, 'True')
+        self.driver.start_traffic(self.context, 'False')
+        rt_stats = self.driver.get_rt_statistics(self.context)
+        while rt_stats[0] != 'Finished':
+            rt_stats = self.driver.get_rt_statistics(self.context)
+        self.driver.stop_traffic(self.context)
+
 
     def _load_config(self, config_name):
         config_file = path.join(path.dirname(__file__), '{}.bbp'.format(config_name))

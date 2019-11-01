@@ -2,7 +2,7 @@
 from __future__ import print_function  # Only Python 2.x
 
 import os
-import subprocess
+import time
 
 from cloudshell.shell.core.session.cloudshell_session import CloudShellSessionContext
 from cloudshell.traffic.tg_helper import (get_reservation_resources, get_address, is_blocking, attach_stats_csv,
@@ -10,7 +10,8 @@ from cloudshell.traffic.tg_helper import (get_reservation_resources, get_address
 
 from byteblower.byteblowerll import byteblower
 
-from src.ep_thread import EpThread
+from src.byteblower_threads import ServerThread, EpThread
+
 
 class ByteBlowerHandler():
 
@@ -29,12 +30,15 @@ class ByteBlowerHandler():
         self.server = bb.ServerAdd(server_address)
         self.meetingpoint = bb.MeetingPointAdd(meetingpoint_address)
 
+        self.ep_thread = None
+
     def tearDown(self):
         pass
 
-    def load_config(self, context, bbl_config_file_name):
+    def load_config(self, context, bbl_config_file_name, scenario='CloudShellPoC'):
 
         self.project = bbl_config_file_name.replace('\\', '/')
+        self.scenario = scenario
 
         return
 
@@ -65,31 +69,32 @@ class ByteBlowerHandler():
         self.logger.info("Port Reservation Completed")
 
     def start_traffic(self, blocking):
-        scenario = 'CloudShellPoC'
 
         log_file_name = self.logger.handlers[0].baseFilename
         output = (os.path.splitext(log_file_name)[0] + '--output').replace('\\', '/')
-        self.bb_cmd = [self.client_install_path, '-project', self.project, '-scenario', scenario, '-output', output]
 
-        self.ep_thread = EpThread(self.logger)
+        self.ep_thread = EpThread(self.logger, '10.113.137.13', '192.168.0.3')
         self.ep_thread.start()
+        self.server_thread = ServerThread(self.logger, self.client_install_path, self.project, self.scenario, output)
+        self.server_thread.start()
+        time.sleep(1)
 
-        shell = not blocking
-        self.popen = subprocess.Popen(self.bb_cmd, stdout=subprocess.PIPE, shell=shell, universal_newlines=True)
         if blocking:
-            self.stop_traffic()
+            # todo: implement wait test.
+            pass
 
     def stop_traffic(self):
-        for stdout_line in iter(self.popen.stdout.readline, ''):
-            print(stdout_line)
-        self.popen.stdout.close()
-        return_code = self.popen.wait()
-        if return_code:
-            raise subprocess.CalledProcessError(return_code, self.bb_cmd)
-        self.ep_thread.stop()
+        if self.ep_thread:
+            self.ep_thread.stop()
+        if self.server_thread:
+            self.server_thread.stop()
 
-    def get_rt_statistics(self):
-        pass
+    def get_rt_statistics(self, num_samples=1):
+        if self.server_thread.is_alive():
+            stats = self.ep_thread.counters[-num_samples:]
+            return stats
+        else:
+            return ['Finished', '0.00', '0.00']
 
     def get_statistics(self, context, output_type):
         pass
