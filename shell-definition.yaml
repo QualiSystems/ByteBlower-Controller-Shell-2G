@@ -9,6 +9,7 @@ metadata:
   template_version: 2.0.0
 node_types:
   vendor.resource.ByteBlower Controller Shell 2G:
+    derived_from: cloudshell.nodes.TrafficGeneratorController
     artifacts:
       driver:
         file: ByteBlowerControllerShell2GDriver.zip
@@ -19,5 +20,10 @@ node_types:
     capabilities:
       concurrent_execution:
         type: cloudshell.capabilities.SupportConcurrentCommands
-    derived_from: cloudshell.nodes.TrafficGeneratorController
+    properties:
+      Meeting Point:
+        description: Meeting point IP address.
+        type: string
+        tags:
+        - user_input
 tosca_definitions_version: tosca_simple_yaml_1_0

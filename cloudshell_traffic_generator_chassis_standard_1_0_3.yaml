@@ -1,0 +1,212 @@
+# CloudShell Traffic Generator Chassis Standard 1.0.0
+
+tosca_definitions_version: tosca_simple_yaml_1_0
+
+metadata:
+  template_name: Traffic Generator Chassis
+  template_author: Quali
+  template_version: 1.0.3
+
+description: Traffic Generator Chassis autoload - work with controller
+
+imports:
+  - cloudshell_types: cloudshell_types_1_2_0.yaml
+
+
+node_types:
+
+# ----------------- CLOUDSHELL NODES -----------------#
+  cloudshell.nodes.TrafficGeneratorChassis:
+    properties:
+      User:
+        type: string
+        description: User with administrative privileges
+        tags: [configuration]
+      Password:
+        type: cloudshell.datatypes.Password
+        description: Password
+        tags: [configuration]
+      Model Name:
+        type: string
+        description: The catalog name of the device model. This attribute will be displayed in CloudShell instead of the CloudShell model.
+        default: ''
+        tags: [setting, abstract_filter, read_only, include_in_insight, search_filter]
+      Controller TCP Port:
+        type: string
+        description: The TCP port of the traffic server. Relevant only in case an external server is configured. Default TCP port should be used if kept empty.
+        tags: [configuration]
+      Controller Address:
+        type: string
+        description: The IP address of the traffic server. Relevant only in case an external server is configured.
+        tags: [configuration]
+      Client Install Path:
+        type: string
+        description: The path in which the traffic client is installed on the Execution Server. For example "C:/Program Files (x86)/Ixia/IxLoad/5.10-GA".
+        tags: [configuration]
+      Power Management:
+        type: boolean
+        description: Used by the power management orchestration, if enabled, to determine whether to automatically manage the device power status. Enabled by default.
+        default: true
+        tags: [configuration]
+      Serial Number:
+        type: string
+        description: The serial number of the resource.
+        tags: [setting, abstract_filter, read_only]
+      Server Description:
+        type: string
+        description: The full description of the server. Usually includes the OS, exact firmware version and additional characteritics of the device.
+        tags: [setting, abstract_filter, read_only]
+      Vendor:
+        type: string
+        description: The name of the device manufacture.
+        tags: [setting, abstract_filter, read_only]
+      Version:
+        type: string
+        description: The firmware version of the resource.
+        tags: [setting, abstract_filter, read_only]
+    capabilities:
+      cloudshell_family:
+        type: cloudshell.families.CS_TrafficGeneratorChassis
+    requirements:
+      - modules:
+            capability: tosca.capabilities.Attachment
+            node: cloudshell.TrafficGeneratorChassis.nodes.GenericTrafficGeneratorModule
+            relationship: tosca.relationships.AttachesTo
+            occurrences: [0, UNBOUNDED]
+      - power_ports:
+            capability: tosca.capabilities.Attachment
+            node: cloudshell.resource.nodes.GenericPowerPort
+            relationship: tosca.relationships.AttachesTo
+            occurrences: [0, UNBOUNDED]
+# ----------------- ------------------ -----------------#
+
+  cloudshell.TrafficGeneratorChassis.nodes.GenericTrafficGeneratorModule:
+    properties:
+      Model Name:
+        description: The catalog name of the device model. This attribute will be displayed in CloudShell instead of the CloudShell model.
+        type: string
+        default: ''
+        tags: [setting, abstract_filter, read_only, include_in_insight, search_filter]
+      Version:
+        description: The firmware version of the resource.
+        type: string
+        default: ''
+        tags: [setting, abstract_filter, read_only]
+      Serial Number:
+        type: string
+        default: ''
+        tags: [setting, abstract_filter, read_only]
+    capabilities:
+      cloudshell_family:
+        type: cloudshell.families.CS_TrafficGeneratorModule 
+    requirements:
+     - port_groups:
+            capability: tosca.capabilities.Attachment
+            node: cloudshell.TrafficGeneratorChassis.nodes.GenericTrafficGeneratorPortGroup
+            relationship: tosca.relationships.AttachesTo
+            occurrences: [0, UNBOUNDED]
+     - ports:
+            capability: tosca.capabilities.Attachment
+            node: cloudshell.TrafficGeneratorChassis.nodes.GenericTrafficGeneratorPort
+            relationship: tosca.relationships.AttachesTo
+            occurrences: [0, UNBOUNDED]
+     - endpoints:
+            capability: tosca.capabilities.Attachment
+            node: cloudshell.TrafficGeneratorChassis.nodes.ByteBlowerEndPoint
+            relationship: tosca.relationships.AttachesTo
+            occurrences: [0, UNBOUNDED]
+
+  cloudshell.resource.nodes.GenericPowerPort:
+    properties:
+      Model:
+        description: The device model. This information is typically used for abstract resource filtering.
+        type: string
+        tags: [setting, abstract_filter, read_only, include_in_insight]
+      Model Name:
+        description: The catalog name of the device model. This attribute will be displayed in CloudShell instead of the CloudShell model.
+        type: string
+        default: ''
+        tags: [setting, abstract_filter, read_only, include_in_insight, search_filter]
+      Serial Number:
+        type: string
+        tags: [setting, abstract_filter, read_only]
+      Version:
+        description: The firmware version of the resource.
+        type: string
+        tags: [setting, abstract_filter, read_only]
+      Port Description:
+        description: The description of the port as configured in the device.
+        type: string
+        tags: [setting, abstract_filter, read_only]
+    capabilities:
+      cloudshell_family:
+        type: cloudshell.families.CS_PowerPort
+
+  cloudshell.TrafficGeneratorChassis.nodes.GenericTrafficGeneratorPortGroup:
+    capabilities:
+      cloudshell_family:
+        type: cloudshell.families.CS_TrafficGeneratorPortGroup
+    requirements:
+     - ports:
+            capability: tosca.capabilities.Attachment
+            node: cloudshell.TrafficGeneratorChassis.nodes.GenericTrafficGeneratorPort
+            relationship: tosca.relationships.AttachesTo
+            occurrences: [0, UNBOUNDED]
+
+  cloudshell.TrafficGeneratorChassis.nodes.GenericTrafficGeneratorPort:
+    properties:
+      Max Speed:
+        description: Max speed supported by the interface (default units - MB)
+        type: string
+        tags: [setting, abstract_filter]
+      Media Type:
+        description: Interface media type. Possible values are Fiber and/or Copper (comma-separated).
+        type: string
+        tags: [setting, abstract_filter, read_only]
+      Logical Name:
+        description: The port's logical name in the test configuration. If kept emtpy - allocation will applied in the blue print.
+        type: string
+        tags: [setting, abstract_filter]
+      Configured Controllers:
+        description: specifies what controller can be used with the ports (IxLoad controller, BP controller etc...)
+        type: string
+        default: 
+        constraints:
+          - valid_values: [IxLoad, BreakingPoint, Ixload and IxNetwork, STC, TRex, TeraVM, Avalanche, Xena]
+        tags: [setting, abstract_filter, read_only]
+    capabilities:
+      cloudshell_family:
+        type: cloudshell.families.CS_TrafficGeneratorPort
+     
+  cloudshell.TrafficGeneratorChassis.nodes.ByteBlowerEndPoint:
+    properties:
+      Version:
+        type: string
+        description: The OS and client version of the endpoint.
+        tags: [setting, abstract_filter, read_only]
+      Address:
+        type: string
+        description: The IP address of the endpoint.
+        tags: [setting, abstract_filter, read_only]
+      Logical Name:
+        description: The port's logical name in the test configuration. If kept emtpy - allocation will applied in the blue print.
+        type: string
+        tags: [setting, abstract_filter]
+    capabilities:
+      cloudshell_family:
+        type: cloudshell.families.CS_TrafficGeneratorPort
+     
+capability_types:
+  cloudshell.capabilities.AutoDiscovery:
+    derived_from: tosca.capabilities.Root
+    properties:
+      inventory_description:
+        type: string
+        default: ''
+      enable_auto_discovery:
+        type: boolean
+        default: true
+      auto_discovery_description:
+        type: string
+        default: ''
+

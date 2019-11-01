@@ -8,34 +8,26 @@ from cloudshell.shell.core.session.cloudshell_session import CloudShellSessionCo
 from cloudshell.traffic.tg_helper import (get_reservation_resources, get_address, is_blocking, attach_stats_csv,
                                           get_family_attribute)
 
-from byteblower.byteblowerll import byteblower
-
-from src.byteblower_threads import ServerThread, EpThread
+from byteblower_threads import ServerThread, EpThread
 
 
 class ByteBlowerHandler():
-
-    namespace = 'ByteBlower Controller Shell 2G'
 
     def initialize(self, context, logger):
 
         self.logger = logger
 
-        address = context.resource.address
-        server_address = context.resource.attributes['ByteBlower Controller Shell 2G.Controller Address']
+        self.server_address = context.resource.attributes['ByteBlower Controller Shell 2G.Address']
+        self.meeting_point = context.resource.attributes['ByteBlower Controller Shell 2G.Meeting Point']
         self.client_install_path = context.resource.attributes['ByteBlower Controller Shell 2G.Client Install Path']
-        meetingpoint_address = server_address
 
-        bb = byteblower.ByteBlower.InstanceGet()
-        self.server = bb.ServerAdd(server_address)
-        self.meetingpoint = bb.MeetingPointAdd(meetingpoint_address)
-
+        self.server_thread = None
         self.ep_thread = None
 
     def tearDown(self):
         pass
 
-    def load_config(self, context, bbl_config_file_name, scenario='CloudShellPoC'):
+    def load_config(self, context, bbl_config_file_name, scenario):
 
         self.project = bbl_config_file_name.replace('\\', '/')
         self.scenario = scenario
@@ -73,7 +65,7 @@ class ByteBlowerHandler():
         log_file_name = self.logger.handlers[0].baseFilename
         output = (os.path.splitext(log_file_name)[0] + '--output').replace('\\', '/')
 
-        self.ep_thread = EpThread(self.logger, '10.113.137.13', '192.168.0.3')
+        self.ep_thread = EpThread(self.logger, '10.113.137.13', self.meeting_point)
         self.ep_thread.start()
         self.server_thread = ServerThread(self.logger, self.client_install_path, self.project, self.scenario, output)
         self.server_thread.start()
@@ -94,7 +86,7 @@ class ByteBlowerHandler():
             stats = self.ep_thread.counters[-num_samples:]
             return stats
         else:
-            return ['Finished', '0.00', '0.00']
+            return [['Finished', '0.00', '0.00']]
 
     def get_statistics(self, context, output_type):
         pass

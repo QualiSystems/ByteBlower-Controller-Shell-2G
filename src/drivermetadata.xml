@@ -14,6 +14,7 @@
         <Command Description="Reserve ports and load configuration" DisplayName="Load Configuration" Name="load_config">
             <Parameters>
                 <Parameter Description="Full path to the configuration file" DisplayName="Configuration File Location" Mandatory="True" Name="config_file_location" Type="String" />
+                <Parameter Description="Scenario name" DisplayName="Scenario" Mandatory="True" Name="scenario" Type="String" />
             </Parameters>
         </Command>
 

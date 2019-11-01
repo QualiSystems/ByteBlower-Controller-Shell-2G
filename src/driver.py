@@ -9,13 +9,14 @@ class ByteBlowerControllerShell2GDriver(TrafficControllerDriver):
         super(self.__class__, self).__init__()
         self.handler = ByteBlowerHandler()
 
-    def load_config(self, context, config_file_location):
+    def load_config(self, context, config_file_location, scenario):
         """ Create ByteBlower configuration with the requested ports.
 
         :param config_file_location: Full path to byteblower configuration file name - bbl
+        :param scenario: scenario to run
         """
         super(self.__class__, self).load_config(context)
-        self.handler.load_config(context, config_file_location)
+        self.handler.load_config(context, config_file_location, scenario)
 
     def start_traffic(self, context, blocking):
         """ Start traffic on all ports.
