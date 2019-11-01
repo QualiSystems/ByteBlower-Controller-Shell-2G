@@ -37,7 +37,7 @@ class ByteBlowerHandler():
         reservation_id = context.reservation.reservation_id
         my_api = CloudShellSessionContext(context).get_api()
 
-        # todo: geat ports from bbl.
+        # todo: get ports from bbl.
         config_ports = ['WAN_PORT', 'PORT_45', 'PC1x2G']
 
         reservation_ports = {}
@@ -63,15 +63,16 @@ class ByteBlowerHandler():
     def start_traffic(self, blocking):
 
         log_file_name = self.logger.handlers[0].baseFilename
-        output = (os.path.splitext(log_file_name)[0] + '--output').replace('\\', '/')
+        self.output = (os.path.splitext(log_file_name)[0] + '--output').replace('\\', '/')
 
         self.ep_thread = EpThread(self.logger, '10.113.137.13', self.meeting_point)
         self.ep_thread.start()
-        self.server_thread = ServerThread(self.logger, self.client_install_path, self.project, self.scenario, output)
+        self.server_thread = ServerThread(self.logger, self.client_install_path, self.project, self.scenario,
+                                          self.output)
         self.server_thread.start()
         time.sleep(1)
 
-        if blocking:
+        if is_blocking(blocking):
             # todo: implement wait test.
             pass
 
@@ -89,4 +90,5 @@ class ByteBlowerHandler():
             return [['Finished', '0.00', '0.00']]
 
     def get_statistics(self, context, output_type):
-        pass
+        # todo: attach requested output file to reservation.
+        return self.output
