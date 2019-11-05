@@ -42,16 +42,20 @@ class TestByteBlowerControllerShell(object):
         self._load_config('test_config', 'CloudShellPoC')
         self.session.ExecuteCommand(self.context.reservation.reservation_id, namespace, 'Service',
                                     'start_traffic', [InputNameValue('blocking', 'True')])
-        res = self.session.ExecuteCommand(self.context.reservation.reservation_id, namespace, 'Service',
-                                          'get_rt_statistics')
-        rt_stats = json.loads(res.Output)[0]
-        while rt_stats[0] != 'Finished':
-            print(rt_stats)
+        status = self.session.ExecuteCommand(self.context.reservation.reservation_id, namespace, 'Service',
+                                             'get_test_status')
+        while status.Output.lower() != 'finished':
+            time.sleep(1)
             res = self.session.ExecuteCommand(self.context.reservation.reservation_id, namespace, 'Service',
                                               'get_rt_statistics')
-            rt_stats = json.loads(res.Output)[0]
+            print(json.loads(res.Output))
+            status = self.session.ExecuteCommand(self.context.reservation.reservation_id, namespace, 'Service',
+                                                 'get_test_status')
         self.session.ExecuteCommand(self.context.reservation.reservation_id, namespace, 'Service',
                                     'stop_traffic')
+        res = self.session.ExecuteCommand(self.context.reservation.reservation_id, namespace, 'Service',
+                                          'get_statistics', [InputNameValue('output_type', 'csv')])
+        print(res.Output)
 
     def _load_config(self, config_name, scenario):
         config_file = path.join(path.dirname(__file__), '{}.bbp'.format(config_name))

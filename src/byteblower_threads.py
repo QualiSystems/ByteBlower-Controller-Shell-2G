@@ -44,35 +44,36 @@ class ServerThread(threading.Thread):
 
 class EpThread(threading.Thread):
 
-    def __init__(self, logger, ip, meetingpoint, interval=0.1):
+    def __init__(self, logger, ip, meetingpoint, name, interval=1):
         threading.Thread.__init__(self)
         self.logger = logger
         self.ip = ip
         self.meetingpoint = meetingpoint
+        self.name = name
         self.interval = interval
         self.finished = threading.Event()
         self.setDaemon(True)
         self.counters = []
-        self.logger.info("EP thread Initiated")
+        self.logger.info('EP {} thread Initiated'.format(self.name))
 
     def stop(self):
-        self.logger.debug("EP thread Stopped")
+        self.logger.info('EP {} thread Stopped'.format(self.name))
         self.finished.set()
         self.join()
         self.popen.terminate()
 
     def run(self):
-        self.logger.info("EP thread Started")
+        self.logger.info('EP {} thread - Started'.format(self.name))
         c = rpyc.classic.connect(self.ip)
         ep_cmd = [ep_clt, self.meetingpoint]
-        self.logger.info('Run EP command - {}'.format(ep_cmd))
+        self.logger.debug('EP {} command: {}'.format(self.name, ep_cmd))
         self.popen = c.modules.subprocess.Popen(ep_cmd, stdout=c.modules.subprocess.PIPE, universal_newlines=True)
         while not self.finished.isSet():
             self.finished.wait(self.interval)
             raw_status = self.popen.stdout.readline().strip()
-            self.logger.debug(raw_status)
+            self.logger.debug('EP {} raw: {}'.format(self.name, raw_status))
             status = raw_status if raw_status.startswith('Status:') else None
             if status:
                 new_status = [status.split()[1]] + re.findall('\d+\.\d+', status)
                 self.counters.append(new_status)
-                self.logger.info(new_status)
+                self.logger.info('EP {} status: {}'.format(self.name, new_status))

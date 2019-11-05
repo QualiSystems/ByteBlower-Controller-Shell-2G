@@ -24,9 +24,11 @@
             </Parameters>
         </Command>
 
-        <Command Description="Stop traffic on all ports" DisplayName="Stop Traffic" Name="stop_traffic" />
+        <Command Description="Stop test" DisplayName="Stop Traffic" Name="stop_traffic" />
 
-        <Command Description="Get real time statistics as sandbox attachment" DisplayName="Get Realtime Statistics" Name="get_rt_statistics" />
+        <Command Description="Get test status - not started, started, finished" DisplayName="Get Test Status" Name="get_test_status" />
+
+        <Command Description="Get real time statistics" DisplayName="Get Realtime Statistics" Name="get_rt_statistics" />
 
         <Command Description="Get post test statistics as sandbox attachment" DisplayName="Get Statistics" Name="get_statistics">
             <Parameters>

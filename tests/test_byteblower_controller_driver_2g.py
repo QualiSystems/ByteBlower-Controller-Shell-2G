@@ -2,6 +2,7 @@
 from os import path
 import sys
 import logging
+import time
 
 from cloudshell.traffic.tg_helper import get_reservation_resources, set_family_attribute
 from shellfoundry.releasetools.test_helper import (get_namespace_from_cloudshell_config,
@@ -45,10 +46,14 @@ class TestByteBlowerControllerDriver(object):
     def test_run_traffic(self):
         self._load_config('test_config', 'CloudShellPoC')
         self.driver.start_traffic(self.context, 'False')
-        rt_stats = self.driver.get_rt_statistics(self.context)
-        while rt_stats[0][0] != 'Finished':
-            rt_stats = self.driver.get_rt_statistics(self.context)
+        status = self.driver.get_test_status(self.context)
+        while status.lower() != 'finished':
+            time.sleep(1)
+            print(self.driver.get_rt_statistics(self.context))
+            status = self.driver.get_test_status(self.context)
         self.driver.stop_traffic(self.context)
+        output = self.driver.get_statistics(self.context, 'csv')
+        print('output folder = {}'.format(output))
 
     def _load_config(self, config_name, scenario):
         config_file = path.join(path.dirname(__file__), '{}.bbp'.format(config_name))
