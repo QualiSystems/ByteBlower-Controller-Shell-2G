@@ -6,7 +6,7 @@ import re
 import rpyc
 
 
-ep_clt = 'C:/Users/PC1xx2G/Desktop/ByteBlowerWirelessEndpoint/$PLUGINSDIR/BBWEP/byteblower-wireless-endpoint.exe'
+ep_clt = 'C:/ByteBlowerWirelessEndpoint/$PLUGINSDIR/BBWEP/byteblower-wireless-endpoint.exe'
 
 
 class ServerThread(threading.Thread):
@@ -22,6 +22,7 @@ class ServerThread(threading.Thread):
         self.finished = threading.Event()
         self.setDaemon(True)
         self.logger.info("Server thread Initiated")
+        self.failed = None
 
     def stop(self):
         self.logger.debug("Server thread Stopped")
@@ -35,16 +36,19 @@ class ServerThread(threading.Thread):
         self.logger.info('Run Server command - {}'.format(server_cmd))
         self.popen = subprocess.Popen(server_cmd, stdout=subprocess.PIPE, universal_newlines=True)
         while not self.finished.isSet():
-            server_stdout = self.popen.stdout.readline()
+            server_stdout = self.popen.stdout.readline().strip()
             self.logger.debug(server_stdout)
-            if server_stdout.strip() == 'FINISHED':
+            if server_stdout == 'FINISHED':
+                break
+            elif 'Failed to initialize scenario' in server_stdout:
+                self.failed = server_stdout
                 break
             self.finished.wait(self.interval)
 
 
 class EpThread(threading.Thread):
 
-    def __init__(self, logger, ip, meetingpoint, name, interval=1):
+    def __init__(self, logger, ip, meetingpoint, name, interval=0.25):
         threading.Thread.__init__(self)
         self.logger = logger
         self.ip = ip
@@ -67,7 +71,7 @@ class EpThread(threading.Thread):
         c = rpyc.classic.connect(self.ip)
         ep_cmd = [ep_clt, self.meetingpoint]
         self.logger.debug('EP {} command: {}'.format(self.name, ep_cmd))
-        self.popen = c.modules.subprocess.Popen(ep_cmd, stdout=c.modules.subprocess.PIPE, universal_newlines=True)
+        self.popen = c.modules.subprocess.Popen(ep_cmd, stdout=c.modules.subprocess.PIPE, stderr=c.modules.subprocess.PIPE)
         while not self.finished.isSet():
             self.finished.wait(self.interval)
             raw_status = self.popen.stdout.readline().strip()

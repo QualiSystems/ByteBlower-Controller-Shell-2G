@@ -84,7 +84,6 @@ class ByteBlowerHandler():
         reservation_ports = {}
         self.reservation_eps = {}
         for port in get_reservation_resources(my_api, context.reservation.reservation_id,
-                                              'ByteBlower Chassis Shell 2G.GenericTrafficGeneratorPort',
                                               'ByteBlower Chassis Shell 2G.ByteBlowerEndPoint'):
             reservation_ports[get_family_attribute(my_api, port, 'Logical Name').Value.strip()] = port
             if port.ResourceModelName == 'ByteBlower Chassis Shell 2G.ByteBlowerEndPoint':
@@ -122,6 +121,8 @@ class ByteBlowerHandler():
             self.eps_threads[name] = EpThread(self.logger, address, self.meeting_point, name)
             self.eps_threads[name].start()
 
+        # add delay to ensure clients are registered before starting traffic
+        time.sleep(8)
         self.server_thread = ServerThread(self.logger, self.client_install_path, self.project, self.scenario,
                                           self.output)
         self.server_thread.start()
@@ -143,7 +144,10 @@ class ByteBlowerHandler():
         if self.server_thread.is_alive():
             return 'Running'
         else:
-            return 'Finished'
+            if self.server_thread.failed:
+                return 'Server Failed: ' + self.server_thread.failed
+            else:
+                return 'Finished'
 
     def get_rt_statistics(self, num_samples=1):
         """
