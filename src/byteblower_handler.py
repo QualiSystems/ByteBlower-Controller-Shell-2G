@@ -4,90 +4,48 @@ from __future__ import print_function  # Only Python 2.x
 import os
 import time
 
-from cloudshell.shell.core.session.cloudshell_session import CloudShellSessionContext
-from cloudshell.traffic.tg_helper import (get_reservation_resources, get_address, is_blocking, attach_stats_csv,
-                                          get_family_attribute)
+from cloudshell.traffic.common import TrafficHandler, get_resources_from_reservation
+from cloudshell.traffic.tg import BYTEBLOWER_CHASSIS_MODEL
+from cloudshell.traffic.tg_helper import (get_address, is_blocking, get_family_attribute)
 
 from byteblower.byteblowerll import byteblower
 from byteblower_threads import ServerThread, EpThread
+from byteblower_data_model import ByteBlower_Controller_Shell_2G
+
+BYTEBLOWER_ENDPOINT_MODEL = BYTEBLOWER_CHASSIS_MODEL + '.ByteBlowerEndPoint'
 
 
-def _get_target_attr_obj(api, resource_name, target_attr_name):
-    """
-    get attribute "object" {Name, Value} on resource
-    Includes validation for 2nd gen shell namespace by pre-fixing family/model namespace
-    :param CloudShellAPISession api:
-    :param str resource_name:
-    :param str target_attr_name: the name of target attribute. Do not include the prefixed-namespace
-    :return attribute object or None:
-    """
-    res_details = api.GetResourceDetails(resource_name)
-    res_model = res_details.ResourceModelName
-    res_family = res_details.ResourceFamilyName
+class ByteBlowerHandler(TrafficHandler):
 
-    # Attribute names with 2nd gen name space (using family or model)
-    target_model_attr = "{model}.{attr}".format(model=res_model, attr=target_attr_name)
-    target_family_attr = "{family}.{attr}".format(family=res_family, attr=target_attr_name)
+    def __init__(self):
+        super(self.__class__, self).__init__()
 
-    # check against all 3 possibilities
-    target_res_attr_filter = [attr for attr in res_details.ResourceAttributes if attr.Name == target_attr_name
-                              or attr.Name == target_model_attr
-                              or attr.Name == target_family_attr]
-    if target_res_attr_filter:
-        return target_res_attr_filter[0]
-    else:
-        return None
-
-
-def get_resource_attr_val(api, resource_name, target_attr_name):
-    """
-    Get value of attribute if it exists
-    :param CloudShellAPISession api:
-    :param str resource_name:
-    :param str target_attr_name:
-    :return:
-    """
-    target_attr_obj = _get_target_attr_obj(api, resource_name, target_attr_name)
-    if target_attr_obj:
-        return target_attr_obj.Value
-    else:
-        return None
-
-
-class ByteBlowerHandler():
+        self.server_thread = None
+        self.eps_threads = None
+        self.reservation_eps = {}
 
     def initialize(self, context, logger):
 
-        self.logger = logger
+        service = ByteBlower_Controller_Shell_2G.create_from_context(context)
+        super(self.__class__, self).initialize(service, logger)
 
-        self.server_address = context.resource.attributes['ByteBlower Controller Shell 2G.Address']
-        self.meeting_point = context.resource.attributes['ByteBlower Controller Shell 2G.Meeting Point']
-        self.client_install_path = context.resource.attributes['ByteBlower Controller Shell 2G.Client Install Path']
-
-        self.server_thread = None
-        self.ep_thread = None
-
-    def tearDown(self):
+    def cleanup(self):
         pass
 
     def load_config(self, context, bbl_config_file_name, scenario):
 
-        my_api = CloudShellSessionContext(context).get_api()
-
         self.project = bbl_config_file_name.replace('\\', '/')
+        if not os.path.exists(self.project):
+            raise EnvironmentError('Configuration file {} not found'.format(self.project))
         self.scenario = scenario
 
         bb = byteblower.ByteBlower.InstanceGet()
-        server = bb.ServerAdd(self.server_address)
+        server = bb.ServerAdd(self.service.address)
         self.port_45 = server.PortCreate('trunk-1-45')
 
-        reservation_ports = {}
         self.reservation_eps = {}
-        for port in get_reservation_resources(my_api, context.reservation.reservation_id,
-                                              'ByteBlower Chassis Shell 2G.ByteBlowerEndPoint'):
-            reservation_ports[get_family_attribute(my_api, port, 'Logical Name').Value.strip()] = port
-            if port.ResourceModelName == 'ByteBlower Chassis Shell 2G.ByteBlowerEndPoint':
-                self.reservation_eps[get_family_attribute(my_api, port, 'Logical Name').Value.strip()] = port
+        for port in get_resources_from_reservation(context, BYTEBLOWER_ENDPOINT_MODEL):
+            self.reservation_eps[get_family_attribute(context, port.Name, 'Logical Name')] = port
 
         return
 
@@ -110,20 +68,21 @@ class ByteBlowerHandler():
 
     def start_traffic(self, context, blocking):
 
-        my_api = CloudShellSessionContext(context).get_api()
-
         log_file_name = self.logger.handlers[0].baseFilename
         self.output = (os.path.splitext(log_file_name)[0] + '--output').replace('\\', '/')
 
         self.eps_threads = {}
-        for name, resource in self.reservation_eps.items():
-            address = get_resource_attr_val(my_api, resource.Name, 'Address')
-            self.eps_threads[name] = EpThread(self.logger, address, self.meeting_point, name)
+        for name, ep in self.reservation_eps.items():
+            ep_ip = get_family_attribute(context, ep.Name, 'Address')
+            self.eps_threads[name] = EpThread(self.logger, ep_ip, self.service.meeting_point, name)
             self.eps_threads[name].start()
+            time.sleep(1)
+            if not self.eps_threads[name].popen:
+                raise Exception('Failed ro start thread on EP {}, IP {}'.format(name, ep_ip))
 
         # add delay to ensure clients are registered before starting traffic
         time.sleep(8)
-        self.server_thread = ServerThread(self.logger, self.client_install_path, self.project, self.scenario,
+        self.server_thread = ServerThread(self.logger, self.service.client_install_path, self.project, self.scenario,
                                           self.output)
         self.server_thread.start()
         time.sleep(1)
@@ -133,8 +92,8 @@ class ByteBlowerHandler():
             pass
 
     def stop_traffic(self):
-        if self.ep_thread:
-            self.ep_thread.stop()
+        for ep_thread in self.eps_threads.values():
+            ep_thread.stop()
         if self.server_thread:
             self.server_thread.stop()
 
@@ -159,6 +118,6 @@ class ByteBlowerHandler():
             rt_stats[name] = thread.counters[-num_samples:]
         return rt_stats
 
-    def get_statistics(self, context, output_type):
+    def get_statistics(self, context, view_name, output_type):
         # todo: attach requested output file to reservation.
         return self.output

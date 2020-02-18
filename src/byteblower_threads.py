@@ -25,13 +25,13 @@ class ServerThread(threading.Thread):
         self.failed = None
 
     def stop(self):
-        self.logger.debug("Server thread Stopped")
+        self.logger.debug('Stopping Server thread')
         self.finished.set()
         self.join()
         self.popen.terminate()
 
     def run(self):
-        self.logger.info("Server thread Started")
+        self.logger.info('Starting Server thread')
         server_cmd = [self.clt, '-project', self.project, '-scenario', self.scenario, '-output', self.output]
         self.logger.info('Run Server command - {}'.format(server_cmd))
         self.popen = subprocess.Popen(server_cmd, stdout=subprocess.PIPE, universal_newlines=True)
@@ -58,16 +58,17 @@ class EpThread(threading.Thread):
         self.finished = threading.Event()
         self.setDaemon(True)
         self.counters = []
+        self.popen = None
         self.logger.info('EP {} thread Initiated'.format(self.name))
 
     def stop(self):
-        self.logger.info('EP {} thread Stopped'.format(self.name))
+        self.logger.info('Stopping {} thread'.format(self.name))
         self.finished.set()
         self.join()
         self.popen.terminate()
 
     def run(self):
-        self.logger.info('EP {} thread - Started'.format(self.name))
+        self.logger.info('Starting {} thread'.format(self.name))
         c = rpyc.classic.connect(self.ip)
         ep_cmd = [ep_clt, self.meetingpoint]
         self.logger.debug('EP {} command: {}'.format(self.name, ep_cmd))

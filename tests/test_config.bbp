@@ -3,19 +3,19 @@
   <Scenario name="CloudShellPoC">
     <measurements xsi:type="byteblowerguimodel_v1_3:FlowMeasurement" flow="//@Flow.0">
       <flowStartEvent scheduledTime="0"/>
-      <flowStopEvent scheduledTime="20000000000"/>
+      <flowStopEvent scheduledTime="10000000000"/>
     </measurements>
     <measurements xsi:type="byteblowerguimodel_v1_3:FlowMeasurement" flow="//@Flow.1">
       <flowStartEvent scheduledTime="0"/>
-      <flowStopEvent scheduledTime="20000000000"/>
+      <flowStopEvent scheduledTime="10000000000"/>
     </measurements>
     <measurements xsi:type="byteblowerguimodel_v1_3:FlowMeasurement" flow="//@Flow.2">
       <flowStartEvent scheduledTime="0"/>
-      <flowStopEvent scheduledTime="20000000000"/>
+      <flowStopEvent scheduledTime="10000000000"/>
     </measurements>
     <measurements xsi:type="byteblowerguimodel_v1_3:FlowMeasurement" flow="//@Flow.3">
       <flowStartEvent scheduledTime="0"/>
-      <flowStopEvent scheduledTime="20000000000"/>
+      <flowStopEvent scheduledTime="10000000000"/>
     </measurements>
   </Scenario>
   <Flow name="FLOW_1" source="//@ByteBlowerGuiPort.0" destination="//@ByteBlowerGuiPort.1" FlowTemplate="//@FlowTemplate.0" latencyAndJitterType="No" flowMeasurement="//@Scenario.0/@measurements.0" tos="0"/>

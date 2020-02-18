@@ -1,9 +1,4 @@
+-r src/requirements.txt
+
 pytest
 GitPython
-rpyc
-
-cloudshell-shell-core
-cloudshell-automation-api>=9.1,<9.2
-cloudshell-traffic>=2.0.1
-
-pybyteblower==0.1

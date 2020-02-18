@@ -1,21 +1,16 @@
-from cloudshell.traffic.driver import TrafficControllerDriver
+
+from cloudshell.traffic.tg import TgControllerDriver, enqueue_keep_alive
 
 from byteblower_handler import ByteBlowerHandler
 
 
-class ByteBlowerControllerShell2GDriver(TrafficControllerDriver):
+class ByteBlowerControllerShell2GDriver(TgControllerDriver):
 
     def __init__(self):
-        super(self.__class__, self).__init__()
         self.handler = ByteBlowerHandler()
 
     def load_config(self, context, config_file_location, scenario):
-        """ Create ByteBlower configuration with the requested ports.
-
-        :param config_file_location: Full path to byteblower configuration file name - bbl
-        :param scenario: scenario to run
-        """
-        super(self.__class__, self).load_config(context)
+        enqueue_keep_alive(context)
         self.handler.load_config(context, config_file_location, scenario)
 
     def start_traffic(self, context, blocking):
@@ -23,12 +18,11 @@ class ByteBlowerControllerShell2GDriver(TrafficControllerDriver):
 
         :param blocking: True - return after traffic finish to run, False - return immediately.
         """
-        self.handler.start_traffic(context, blocking)
-        return 'traffic started in {} mode'.format(blocking)
+        return super(self.__class__, self).start_traffic(context, blocking)
 
     def stop_traffic(self, context):
         """ Stop traffic on all ports. """
-        self.handler.stop_traffic()
+        return super(self.__class__, self).stop_traffic(context)
 
     def get_test_status(self, context):
         """ Get test status - not started, running, finished. """
@@ -38,12 +32,13 @@ class ByteBlowerControllerShell2GDriver(TrafficControllerDriver):
         """ Get real time statistics for all ports and endpoints. """
         return self.handler.get_rt_statistics()
 
-    def get_statistics(self, context, output_type):
-        """ Get statistics.
+    def get_statistics(self, context, view_name, output_type):
+        """ Get view statistics.
 
+        :param view_name: port, traffic item, flow group etc.
         :param output_type: CSV or JSON.
         """
-        return self.handler.get_statistics(context, output_type)
+        return super(self.__class__, self).get_statistics(context, view_name, output_type)
 
     #
     # Parent commands are not visible so we re define them in child.

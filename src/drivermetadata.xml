@@ -1,4 +1,4 @@
-<Driver Description="Describe the purpose of your CloudShell shell" MainClass="driver.ByteBlowerControllerShell2GDriver" Name="IxNetworkControllerShell2GDriver" Version="2.1.0">
+<Driver Description="Describe the purpose of your CloudShell shell" MainClass="byteblower_driver.ByteBlowerControllerShell2GDriver" Name="IxNetworkControllerShell2GDriver" Version="2.1.0">
     <Layout>
 
         <Category Name="Hidden Commands">
