@@ -38,7 +38,8 @@ class ByteBlowerHandler(TrafficHandler):
 
     def cleanup(self):
         if self.project:
-            os.remove(self.project)
+            if os.path.exists(self.project):
+                os.remove(self.project)
 
     def load_config(self, context, bbl_config_file_name, scenario):
 
@@ -59,7 +60,7 @@ class ByteBlowerHandler(TrafficHandler):
         for ep in get_resources_from_reservation(context, BYTEBLOWER_ENDPOINT_MODEL):
             logical_name = get_family_attribute(context, ep.Name, 'Logical Name')
             self.reservation_eps[logical_name] = ep
-            xml_gui_port = [p for p in xml_gui_ports if p.attrib['name'] == logical_name][0]
+            xml_gui_port = self._find_xml_gui_port(xml_gui_ports, logical_name)
             identifier = get_family_attribute(context, ep.Name, 'Identifier')
             xml_gui_port.find('ByteBlowerGuiPortConfiguration').attrib['physicalInterfaceId'] = identifier
 
@@ -68,7 +69,7 @@ class ByteBlowerHandler(TrafficHandler):
         for port in get_resources_from_reservation(context, BYTEBLOWER_PORT_MODEL):
             logical_name = get_family_attribute(context, port.Name, 'Logical Name')
             self.reservation_ports[logical_name] = port
-            xml_gui_port = [p for p in xml_gui_ports if p.attrib['name'] == logical_name][0]
+            xml_gui_port = self._find_xml_gui_port(xml_gui_ports, logical_name)
             bb_port_name = port.Name.split('/')[-1]
             if xml_gui_port.find('ByteBlowerGuiPortConfiguration').attrib['physicalPortId'] != '-1':
                 identifier = int(bb_port_name.split('-')[-1]) - 1
@@ -112,9 +113,10 @@ class ByteBlowerHandler(TrafficHandler):
         time.sleep(1)
         if not self.server_thread.popen:
             raise Exception('Failed to start thread on server')
-        time.sleep(2)
-        if self.server_thread.failed:
-            raise Exception(self.server_thread.failed)
+        while not self.server_thread.traffic_running:
+            time.sleep(1)
+            if self.server_thread.failed:
+                raise Exception('Failed to start traffic - {}'.format(self.server_thread.failed))
 
         if is_blocking(blocking):
             # todo: implement wait test.
@@ -129,11 +131,11 @@ class ByteBlowerHandler(TrafficHandler):
     def get_test_status(self):
         if not self.server_thread:
             return 'Not started'
-        if self.server_thread.is_alive():
-            return 'Running'
         else:
             if self.server_thread.failed:
                 raise Exception('Server Failed: ' + self.server_thread.failed)
+            if self.server_thread.traffic_running:
+                return 'Running'
             else:
                 return 'Finished'
 
@@ -156,3 +158,10 @@ class ByteBlowerHandler(TrafficHandler):
     def get_statistics(self, context, view_name, output_type):
         # todo: attach requested output file to reservation.
         return self.output
+
+    def _find_xml_gui_port(self, xml_gui_ports, logical_name):
+        requested_xml_gui_ports = [p for p in xml_gui_ports if p.attrib['name'] == logical_name]
+        if not requested_xml_gui_ports:
+            raise Exception('Logical name {} not found in configuration ports {}'.
+                            format(logical_name, [p.attrib['name'] for p in xml_gui_ports]))
+        return requested_xml_gui_ports[0]

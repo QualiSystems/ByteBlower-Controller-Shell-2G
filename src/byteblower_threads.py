@@ -1,6 +1,5 @@
 
 from __future__ import print_function # Only Python 2.x
-import sys
 import threading
 import subprocess
 import re
@@ -31,6 +30,7 @@ class ServerThread(threading.Thread):
         self.finished.set()
         self.join()
         self.popen.terminate()
+        self.traffic_running = False
 
     def run(self):
         self.logger.info('Starting Server thread')
@@ -43,21 +43,23 @@ class ServerThread(threading.Thread):
             self.popen = subprocess.Popen(server_cmd, stdout=writer, stderr=writer, universal_newlines=True)
             while self.popen.poll() is None:
                 output = reader.read()
-                sys.stdout.write(output)
-                if 'StartTraffic' in output:
-                    self.traffic_running = True
-                elif 'StopTraffic' in output:
-                    self.traffic_running = False
-                elif '!MESSAGE Failed' in output:
-                    self.failed = output
-                    break
+                self._parse_output(output)
                 self.finished.wait(self.interval)
             output = reader.read()
-            sys.stdout.write(output)
+            self._parse_output(output)
+        self.popen.wait()
 
-        return_code = self. popen.wait()
-        if return_code:
-            self.failed = 'Non-zero return code - {}'.format(return_code)
+    def _parse_output(self, output):
+        if 'StartTraffic' in output:
+            self.traffic_running = True
+        elif 'StopTraffic' in output:
+            self.traffic_running = False
+        elif 'Action failed' in output:
+            self.failed = [l for l in output.split('\n') if 'Action failed' in l][0]
+        elif '!MESSAGE Failed' in output:
+            self.failed = [l for l in output.split('\n') if '!MESSAGE Failed' in l][0]
+        if self.failed:
+            raise Exception(self.failed)
 
 
 class EpThread(threading.Thread):

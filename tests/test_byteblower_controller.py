@@ -116,21 +116,8 @@ class TestByteBlowerControllerDriver(object):
             driver.start_traffic(context, 'False')
 
     def test_run_traffic(self, driver, context, configuration):
-        driver.load_config(context, *configuration)
 
-        driver.start_traffic(context, 'False')
-        status = driver.get_test_status(context)
-        while status.lower() != 'finished':
-            time.sleep(1)
-            print(driver.get_rt_statistics(context))
-            status = driver.get_test_status(context)
-        driver.stop_traffic(context)
-        output = driver.get_statistics(context, None, None)
-        print('output folder = {}'.format(output))
-
-    def test_rerun_traffic(self, driver, context, configuration):
-
-        for _ in range(0, 4):
+        for _ in range(0, 1):
             driver.load_config(context, *configuration)
             driver.start_traffic(context, 'False')
             status = driver.get_test_status(context)
@@ -152,34 +139,9 @@ class TestByteBlowerControllerShell(object):
                                [InputNameValue('config_file_location', configuration[0]),
                                 InputNameValue('scenario', configuration[1])])
 
-    def test_run_traffic(self, session, context, alias, configuration):
-        session.ExecuteCommand(get_reservation_id(context), alias, 'Service',
-                               'load_config',
-                               [InputNameValue('config_file_location', configuration[0]),
-                                InputNameValue('scenario', configuration[1])])
-
-        session.ExecuteCommand(get_reservation_id(context), alias, 'Service',
-                               'start_traffic',
-                               [InputNameValue('blocking', 'False')])
-        status = session.ExecuteCommand(get_reservation_id(context), alias, 'Service',
-                                        'get_test_status')
-        while status.Output.lower() != 'finished':
-            time.sleep(1)
-            rt_stats = session.ExecuteCommand(get_reservation_id(context), alias, 'Service',
-                                              'get_rt_statistics')
-            print(rt_stats.Output)
-            status = session.ExecuteCommand(get_reservation_id(context), alias, 'Service',
-                                            'get_test_status')
-        session.ExecuteCommand(get_reservation_id(context), alias, 'Service',
-                               'stop_traffic')
-        stats = session.ExecuteCommand(get_reservation_id(context), alias, 'Service',
-                                       'get_statistics',
-                                       [InputNameValue('view_name', None),
-                                        InputNameValue('output_type', None)])
-        print(stats.Output)
-
     def test_rerun_traffic(self, session, context, alias, configuration):
-        for _ in range(0, 4):
+
+        for _ in range(0, 1):
             session.ExecuteCommand(get_reservation_id(context), alias, 'Service',
                                    'load_config',
                                    [InputNameValue('config_file_location', configuration[0]),
