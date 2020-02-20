@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="ASCII"?>
 <byteblowerguimodel_v1_3:ByteBlowerProject xmi:version="2.0" xmlns:xmi="http://www.omg.org/XMI" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:byteblowerguimodel_v1_3="http:///com.excentis.products.byteblower.gui.model.ecore" name="UDP Portloading Mv2 HW11" author="Azam" modelVersion="2.10.2" defaultBatchInitializationTime="10000000000" warningLossLevel="0.01" errorLossLevel="0.02" reportOutputToHtml="true" reportOutputToExcel="true" reportOutputToCsv="true" reportOutputToJson="false" reportProjectBackup="true" throughputUnit="Mbps" scenarioIdenticalFramesWarning="true" scenarioPauseAfterDhcp="false" scenarioEnableScoutingFrames="false" scenarioIgnoreInitializationErrors="false" scenarioWaitTimeAfterScenario="5000000000" throughputType="FrameOnly" dhcpTimeout="1000000000" numberOfDecimals="0" dhcpRetries="5" latencyRangeStart="0" latencyRangeEnd="100000000" latencyUnit="14" numberOfLatencyDecimals="0" reportOutputToPdf="true" ScenarioHttpAllowAlive="120000000000" scenarioAutomaticTcpRestart="false">
-  <Scenario name="CloudShellPoC">
+  <Scenario name="test_config">
     <measurements xsi:type="byteblowerguimodel_v1_3:FlowMeasurement" flow="//@Flow.0">
       <flowStartEvent scheduledTime="0"/>
       <flowStopEvent scheduledTime="10000000000"/>

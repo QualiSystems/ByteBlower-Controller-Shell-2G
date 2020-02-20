@@ -23,6 +23,7 @@ class ServerThread(threading.Thread):
         self.setDaemon(True)
         self.logger.info("Server thread Initiated")
         self.failed = None
+        self.popen = None
 
     def stop(self):
         self.logger.debug('Stopping Server thread')
@@ -36,14 +37,18 @@ class ServerThread(threading.Thread):
         self.logger.info('Run Server command - {}'.format(server_cmd))
         self.popen = subprocess.Popen(server_cmd, stdout=subprocess.PIPE, universal_newlines=True)
         while not self.finished.isSet():
-            server_stdout = self.popen.stdout.readline().strip()
-            self.logger.debug(server_stdout)
-            if server_stdout == 'FINISHED':
-                break
-            elif 'Failed to initialize scenario' in server_stdout:
-                self.failed = server_stdout
-                break
-            self.finished.wait(self.interval)
+            try:
+                server_stdout = self.popen.stdout.readline().strip()
+                self.logger.debug('server_stdout: ' + server_stdout)
+                if server_stdout == 'FINISHED':
+                    break
+                elif '!MESSAGE Failed' in server_stdout:
+                    self.failed = server_stdout
+                    break
+                self.finished.wait(self.interval)
+            except Exception as e:
+                self.logger.debug('server_stdout: ' + str(e))
+                self.failed = str(e)
 
 
 class EpThread(threading.Thread):

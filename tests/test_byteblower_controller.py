@@ -3,7 +3,6 @@ from os import path
 import time
 import pytest
 
-
 from cloudshell.api.cloudshell_api import AttributeNameValue, InputNameValue
 from cloudshell.traffic.tg_helper import set_family_attribute
 from cloudshell.traffic.tg import BYTEBLOWER_CONTROLLER_MODEL
@@ -13,8 +12,16 @@ from shellfoundry.releasetools.test_helper import (create_session_from_deploymen
 
 from src.byteblower_driver import ByteBlowerControllerShell2GDriver
 
-ports = ['BB/Module1/Port1', 'BB/Module2/Port45', 'BB/Module3/PC1X2G', 'BB/Module3/PC2X5G', 'BB/Module3/PC3X2G', 'BB/Module3/PC4X5G']
-ports = ['BB/Module1/Port1', 'BB/Module2/Port45', 'BB/Module3/PC1X2G']
+eps_logical_names = ['EP01_2G', 'EP02_5G', 'EP03_2G', 'EP04_5G']
+ports_logical_names = ['WAN_PORT', 'PORT_A', 'PORT_B', 'PORT_C', 'PORT_D']
+
+ports = {'test_config':
+             ['BB/Module1/nontrunk-1', 'BB/Module2/trunk-1-45',
+              'BB/Module3/PC1X2G'],
+         'test_config_4_cpes':
+             ['BB/Module1/nontrunk-1',
+              'BB/Module2/trunk-1-45', 'BB/Module2/trunk-1-46', 'BB/Module2/trunk-1-47', 'BB/Module2/trunk-1-48',
+              'BB/Module3/PC1X2G', 'BB/Module3/PC2X5G', 'BB/Module3/PC3X2G', 'BB/Module3/PC4X5G']}
 
 
 @pytest.fixture()
@@ -35,6 +42,16 @@ def server():
 @pytest.fixture()
 def client_install_path():
     yield 'C:/Program Files (x86)/Excentis/ByteBlower-CLT-v2/ByteBlower-CLT.exe'
+
+
+# @pytest.fixture(params=[('test_config', 'test_config')],
+#                 ids=['test_config'])
+@pytest.fixture(params=[('test_config_4_cpes', 'test_config_4_cpes')],
+                ids=['test_config_4_cpes'])
+def configuration(request):
+    config_file = path.join(path.dirname(__file__), request.param[0]) + '.bbp'
+    scenario = request.param[1]
+    yield [config_file.replace('\\', '/'), scenario]
 
 
 @pytest.fixture()
@@ -58,34 +75,32 @@ def driver(session, model, server, client_install_path):
 
 
 @pytest.fixture()
-def context(session, model, alias, server, client_install_path):
+def context(session, model, alias, server, client_install_path, configuration):
     address, meeting_point = server
     attributes = [AttributeNameValue(model + '.Address', address),
                   AttributeNameValue(model + '.Meeting Point', meeting_point),
                   AttributeNameValue(model + '.Client Install Path', client_install_path)]
     context = create_service_command_context(session, model, alias, attributes)
-    add_resources_to_reservation(context, *ports)
+    add_resources_to_reservation(context, *ports[configuration[0].split('/')[-1].split('.')[0]])
     reservation_ports = get_resources_from_reservation(context,
                                                        'ByteBlower Chassis Shell 2G.GenericTrafficGeneratorPort')
-    set_family_attribute(context, reservation_ports[0], 'Logical Name', 'WAN PORT')
-    set_family_attribute(context, reservation_ports[1], 'Logical Name', 'PORT_A')
+    for i, ep in enumerate(reservation_ports):
+        set_family_attribute(context, ep, 'Logical Name', ports_logical_names[i])
     reservation_eps = get_resources_from_reservation(context,
-                                                       'ByteBlower Chassis Shell 2G.ByteBlowerEndPoint')
-    set_family_attribute(context, reservation_eps[0], 'Logical Name', 'EP01_2G')
+                                                     'ByteBlower Chassis Shell 2G.ByteBlowerEndPoint')
+    for i, ep in enumerate(reservation_eps):
+        set_family_attribute(context, ep, 'Logical Name', eps_logical_names[i])
     yield context
     end_reservation(session, get_reservation_id(context))
 
 
 class TestByteBlowerControllerDriver(object):
 
-    def test_load_config(self, driver, context):
-        config_file = path.join(path.dirname(__file__), 'test_config.bbp')
-        driver.load_config(context, config_file, 'CloudShellPoC')
-        # self._load_config('Mv2-HW11-Portloading', 'Mv2-HW11-Automation')
+    def test_load_config(self, driver, context, configuration):
+        driver.load_config(context, *configuration)
 
-    def test_run_traffic(self, driver, context):
-        config_file = path.join(path.dirname(__file__), 'test_config.bbp')
-        driver.load_config(context, config_file, 'CloudShellPoC')
+    def test_run_traffic(self, driver, context, configuration):
+        driver.load_config(context, *configuration)
 
         driver.start_traffic(context, 'False')
         status = driver.get_test_status(context)
@@ -100,12 +115,11 @@ class TestByteBlowerControllerDriver(object):
 
 class TestByteBlowerControllerShell(object):
 
-    def test_load_config(self, session, context, alias):
-        config_file = path.join(path.dirname(__file__), 'test_config.bbp')
+    def test_load_config(self, session, context, alias, configuration):
         session.ExecuteCommand(get_reservation_id(context), alias, 'Service',
                                'load_config',
-                               [InputNameValue('config_file_location', config_file),
-                                InputNameValue('scenario', 'CloudShellPoC')])
+                               [InputNameValue('config_file_location', configuration[0]),
+                                InputNameValue('scenario', configuration[1])])
 
     def test_run_traffic(self, session, context, alias):
         config_file = path.join(path.dirname(__file__), 'test_config.bbp')

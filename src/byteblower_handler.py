@@ -3,6 +3,8 @@ from __future__ import print_function  # Only Python 2.x
 
 import os
 import time
+import tempfile
+import xml.etree.ElementTree as ET
 
 from cloudshell.traffic.common import TrafficHandler, get_resources_from_reservation
 from cloudshell.traffic.tg import BYTEBLOWER_CHASSIS_MODEL
@@ -12,6 +14,7 @@ from byteblower.byteblowerll import byteblower
 from byteblower_threads import ServerThread, EpThread
 from byteblower_data_model import ByteBlower_Controller_Shell_2G
 
+BYTEBLOWER_PORT_MODEL = BYTEBLOWER_CHASSIS_MODEL + '.GenericTrafficGeneratorPort'
 BYTEBLOWER_ENDPOINT_MODEL = BYTEBLOWER_CHASSIS_MODEL + '.ByteBlowerEndPoint'
 
 
@@ -22,7 +25,11 @@ class ByteBlowerHandler(TrafficHandler):
 
         self.server_thread = None
         self.eps_threads = None
+        self.reservation_ports = {}
         self.reservation_eps = {}
+        self.bb_ports = {}
+        self.project = None
+        self.scenario = None
 
     def initialize(self, context, logger):
 
@@ -30,41 +37,57 @@ class ByteBlowerHandler(TrafficHandler):
         super(self.__class__, self).initialize(service, logger)
 
     def cleanup(self):
-        pass
+        if self.project:
+            os.remove(self.project)
 
     def load_config(self, context, bbl_config_file_name, scenario):
 
-        self.project = bbl_config_file_name.replace('\\', '/')
-        if not os.path.exists(self.project):
+        project = bbl_config_file_name.replace('\\', '/')
+        if not os.path.exists(project):
             raise EnvironmentError('Configuration file {} not found'.format(self.project))
+        self.project = tempfile.mktemp().replace('\\', '/')
         self.scenario = scenario
+
+        xml = ET.parse(project)
+        xml_root = xml.getroot()
+        xml_gui_ports = xml_root.findall('ByteBlowerGuiPort')
 
         bb = byteblower.ByteBlower.InstanceGet()
         server = bb.ServerAdd(self.service.address)
-        self.port_45 = server.PortCreate('trunk-1-45')
 
         self.reservation_eps = {}
-        for port in get_resources_from_reservation(context, BYTEBLOWER_ENDPOINT_MODEL):
-            self.reservation_eps[get_family_attribute(context, port.Name, 'Logical Name')] = port
+        for ep in get_resources_from_reservation(context, BYTEBLOWER_ENDPOINT_MODEL):
+            logical_name = get_family_attribute(context, ep.Name, 'Logical Name')
+            self.reservation_eps[logical_name] = ep
+            xml_gui_port = [p for p in xml_gui_ports if p.attrib['name'] == logical_name][0]
+            identifier = get_family_attribute(context, ep.Name, 'Identifier')
+            xml_gui_port.find('ByteBlowerGuiPortConfiguration').attrib['physicalInterfaceId'] = identifier
 
-        return
+        self.reservation_ports = {}
+        self.bb_ports = {}
+        for port in get_resources_from_reservation(context, BYTEBLOWER_PORT_MODEL):
+            logical_name = get_family_attribute(context, port.Name, 'Logical Name')
+            self.reservation_ports[logical_name] = port
+            xml_gui_port = [p for p in xml_gui_ports if p.attrib['name'] == logical_name][0]
+            bb_port_name = port.Name.split('/')[-1]
+            if xml_gui_port.find('ByteBlowerGuiPortConfiguration').attrib['physicalPortId'] != '-1':
+                identifier = int(bb_port_name.split('-')[-1]) - 1
+                xml_gui_port.find('ByteBlowerGuiPortConfiguration').attrib['physicalPortId'] = str(identifier)
+            self.bb_ports[logical_name] = server.PortCreate(bb_port_name).RxTriggerBasicAdd().ResultHistoryGet()
 
-        # todo: get ports from bbl.
-        config_ports = ['WAN_PORT', 'PORT_45', 'PC1x2G']
-
-        for port in config_ports:
-            name = port.obj_name()
-            if name in reservation_ports:
-                address = get_address(reservation_ports[name])
-                self.logger.debug('Logical Port {} will be reserved on Physical location {}'.format(name, address))
-                port.reserve(address, wait_for_up=False)
-            else:
-                self.logger.error('Configuration port "{}" not found in reservation ports {}'.
-                                  format(port, reservation_ports.keys()))
-                raise Exception('Configuration port "{}" not found in reservation ports {}'.
-                                format(port, reservation_ports.keys()))
-
-        self.logger.info("Port Reservation Completed")
+        xml.write(self.project)
+        # When we write the new xml, the root element is written in different style then the original one, probably
+        # due to multiple namespaces. BB-CLT can't load the changed configuration. The code bellow replaces the root
+        # element with the original one.
+        # todo: is there any standard way to manipulate the xml so the result will be valid?
+        with open(project, 'r') as p_f:
+            project_lines = p_f.readlines()
+            with open(self.project, 'r+') as np_f:
+                new_project_lines = np_f.readlines()
+                new_project_lines[0] = project_lines[1]
+                new_project_lines[-1] = project_lines[-1]
+                np_f.seek(0)
+                np_f.writelines(new_project_lines)
 
     def start_traffic(self, context, blocking):
 
@@ -86,6 +109,11 @@ class ByteBlowerHandler(TrafficHandler):
                                           self.output)
         self.server_thread.start()
         time.sleep(1)
+        if not self.server_thread.popen:
+            raise Exception('Failed to start thread on server')
+        time.sleep(2)
+        if self.server_thread.failed:
+            raise Exception(self.server_thread.failed)
 
         if is_blocking(blocking):
             # todo: implement wait test.
@@ -104,7 +132,7 @@ class ByteBlowerHandler(TrafficHandler):
             return 'Running'
         else:
             if self.server_thread.failed:
-                return 'Server Failed: ' + self.server_thread.failed
+                raise Exception('Server Failed: ' + self.server_thread.failed)
             else:
                 return 'Finished'
 
@@ -116,6 +144,11 @@ class ByteBlowerHandler(TrafficHandler):
         rt_stats = {}
         for name, thread in self.eps_threads.items():
             rt_stats[name] = thread.counters[-num_samples:]
+        for name, bb_port in self.bb_ports.items():
+            bb_port.Refresh()
+            cumulative = bb_port.CumulativeLatestGet()
+            interval = bb_port.IntervalLatestGet()
+            rt_stats[name] = [cumulative.ByteCountGet(), interval.ByteCountGet()]
         return rt_stats
 
     def get_statistics(self, context, view_name, output_type):

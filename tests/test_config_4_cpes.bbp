@@ -1,69 +1,69 @@
 <?xml version="1.0" encoding="ASCII"?>
 <byteblowerguimodel_v1_3:ByteBlowerProject xmi:version="2.0" xmlns:xmi="http://www.omg.org/XMI" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:byteblowerguimodel_v1_3="http:///com.excentis.products.byteblower.gui.model.ecore" name="UDP Portloading Mv2 HW11" author="Erchin" modelVersion="2.10.2" defaultBatchInitializationTime="10000000000" warningLossLevel="0.01" errorLossLevel="0.02" reportOutputToHtml="true" reportOutputToExcel="true" reportOutputToCsv="true" reportOutputToJson="false" reportProjectBackup="true" throughputUnit="Mbps" scenarioIdenticalFramesWarning="true" scenarioPauseAfterDhcp="false" scenarioEnableScoutingFrames="false" scenarioIgnoreInitializationErrors="true" scenarioWaitTimeAfterScenario="5000000000" throughputType="FrameOnly" dhcpTimeout="1000000000" numberOfDecimals="0" dhcpRetries="5" latencyRangeStart="0" latencyRangeEnd="100000000" latencyUnit="14" numberOfLatencyDecimals="0" reportOutputToPdf="true" ScenarioHttpAllowAlive="120000000000" scenarioAutomaticTcpRestart="false">
-  <Scenario name="Mv2-HW11-Automation">
+  <Scenario name="test_config_4_cpes">
     <measurements xsi:type="byteblowerguimodel_v1_3:FlowMeasurement" flow="//@Flow.0">
       <flowStartEvent scheduledTime="0"/>
-      <flowStopEvent scheduledTime="60000000000"/>
+      <flowStopEvent scheduledTime="20000000000"/>
     </measurements>
     <measurements xsi:type="byteblowerguimodel_v1_3:FlowMeasurement" flow="//@Flow.1">
       <flowStartEvent scheduledTime="0"/>
-      <flowStopEvent scheduledTime="60000000000"/>
+      <flowStopEvent scheduledTime="20000000000"/>
     </measurements>
     <measurements xsi:type="byteblowerguimodel_v1_3:FlowMeasurement" flow="//@Flow.2">
       <flowStartEvent scheduledTime="0"/>
-      <flowStopEvent scheduledTime="60000000000"/>
+      <flowStopEvent scheduledTime="20000000000"/>
     </measurements>
     <measurements xsi:type="byteblowerguimodel_v1_3:FlowMeasurement" flow="//@Flow.3">
       <flowStartEvent scheduledTime="0"/>
-      <flowStopEvent scheduledTime="60000000000"/>
+      <flowStopEvent scheduledTime="20000000000"/>
     </measurements>
     <measurements xsi:type="byteblowerguimodel_v1_3:FlowMeasurement" flow="//@Flow.4">
       <flowStartEvent scheduledTime="0"/>
-      <flowStopEvent scheduledTime="60000000000"/>
+      <flowStopEvent scheduledTime="20000000000"/>
     </measurements>
     <measurements xsi:type="byteblowerguimodel_v1_3:FlowMeasurement" flow="//@Flow.5">
       <flowStartEvent scheduledTime="0"/>
-      <flowStopEvent scheduledTime="60000000000"/>
+      <flowStopEvent scheduledTime="20000000000"/>
     </measurements>
     <measurements xsi:type="byteblowerguimodel_v1_3:FlowMeasurement" flow="//@Flow.6">
       <flowStartEvent scheduledTime="0"/>
-      <flowStopEvent scheduledTime="60000000000"/>
+      <flowStopEvent scheduledTime="20000000000"/>
     </measurements>
     <measurements xsi:type="byteblowerguimodel_v1_3:FlowMeasurement" flow="//@Flow.7">
       <flowStartEvent scheduledTime="0"/>
-      <flowStopEvent scheduledTime="60000000000"/>
+      <flowStopEvent scheduledTime="20000000000"/>
     </measurements>
     <measurements xsi:type="byteblowerguimodel_v1_3:FlowMeasurement" flow="//@Flow.8">
       <flowStartEvent scheduledTime="0"/>
-      <flowStopEvent scheduledTime="60000000000"/>
+      <flowStopEvent scheduledTime="20000000000"/>
     </measurements>
     <measurements xsi:type="byteblowerguimodel_v1_3:FlowMeasurement" flow="//@Flow.9">
       <flowStartEvent scheduledTime="0"/>
-      <flowStopEvent scheduledTime="60000000000"/>
+      <flowStopEvent scheduledTime="20000000000"/>
     </measurements>
     <measurements xsi:type="byteblowerguimodel_v1_3:FlowMeasurement" flow="//@Flow.10">
       <flowStartEvent scheduledTime="0"/>
-      <flowStopEvent scheduledTime="60000000000"/>
+      <flowStopEvent scheduledTime="20000000000"/>
     </measurements>
     <measurements xsi:type="byteblowerguimodel_v1_3:FlowMeasurement" flow="//@Flow.11">
       <flowStartEvent scheduledTime="0"/>
-      <flowStopEvent scheduledTime="60000000000"/>
+      <flowStopEvent scheduledTime="20000000000"/>
     </measurements>
     <measurements xsi:type="byteblowerguimodel_v1_3:FlowMeasurement" flow="//@Flow.12">
       <flowStartEvent scheduledTime="0"/>
-      <flowStopEvent scheduledTime="60000000000"/>
+      <flowStopEvent scheduledTime="20000000000"/>
     </measurements>
     <measurements xsi:type="byteblowerguimodel_v1_3:FlowMeasurement" flow="//@Flow.13">
       <flowStartEvent scheduledTime="0"/>
-      <flowStopEvent scheduledTime="60000000000"/>
+      <flowStopEvent scheduledTime="20000000000"/>
     </measurements>
     <measurements xsi:type="byteblowerguimodel_v1_3:FlowMeasurement" flow="//@Flow.14">
       <flowStartEvent scheduledTime="0"/>
-      <flowStopEvent scheduledTime="60000000000"/>
+      <flowStopEvent scheduledTime="20000000000"/>
     </measurements>
     <measurements xsi:type="byteblowerguimodel_v1_3:FlowMeasurement" flow="//@Flow.15">
       <flowStartEvent scheduledTime="0"/>
-      <flowStopEvent scheduledTime="60000000000"/>
+      <flowStopEvent scheduledTime="20000000000"/>
     </measurements>
   </Scenario>
   <Flow name="FLOW_1" source="//@ByteBlowerGuiPort.0" destination="//@ByteBlowerGuiPort.1" FlowTemplate="//@FlowTemplate.0" latencyAndJitterType="No" flowMeasurement="//@Scenario.0/@measurements.0" tos="0"/>
@@ -178,7 +178,7 @@
   <Frame name="FRAME_16" bytesHexString="0000000000000000000000000800450005CE02780000FE11B0A3010101010101010113A713A805BAC1C2457863656E7469732042797465426C6F7765722044656661756C74205061796C6F61642E000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000" L2AutoSourceMac="true" L2AutoDestMac="true" L3AutoSourceIp="true" L3AutoDestIp="true" L3AutoHeaderCheck="true" L3AutoTotLen="true" L3LinkWithL2="true" L4AutoTcpChecksum="false" L4AutoUdpChecksum="true" L4AutoTotLen="true" L4LinkWithL3="true" L3AutoArpSHA="false" L3AutoArpSPA="false" L3AutoArpTHA="false" L3AutoArpTPA="false" L3AutoIpv6Source="false" L3AutoIpv6Destination="false" L3AutoIpv6PayloadLength="false" frameBlastingFrames="//@FlowTemplate.15/@frameBlastingFrames.0" L4AllowPortOverride="true">
     <modifiers xsi:type="byteblowerguimodel_v1_3:UniqueFieldModifier" fieldLength="1" offset="0"/>
   </Frame>
-  <ByteBlowerGuiPort name="WAN PORT" theSourceOfFlow="//@Flow.0 //@Flow.4 //@Flow.6 //@Flow.2 //@Flow.8 //@Flow.10 //@Flow.14 //@Flow.12" theDestinationOfFlow="//@Flow.1 //@Flow.5 //@Flow.7 //@Flow.3 //@Flow.9 //@Flow.11 //@Flow.15 //@Flow.13" natted="false" mtu="1500">
+  <ByteBlowerGuiPort name="WAN_PORT" theSourceOfFlow="//@Flow.0 //@Flow.4 //@Flow.6 //@Flow.2 //@Flow.8 //@Flow.10 //@Flow.14 //@Flow.12" theDestinationOfFlow="//@Flow.1 //@Flow.5 //@Flow.7 //@Flow.3 //@Flow.9 //@Flow.11 //@Flow.15 //@Flow.13" natted="false" mtu="1500">
     <layer2Configuration xsi:type="byteblowerguimodel_v1_3:EthernetConfiguration">
       <MacAddress>
         <bytes>0</bytes>
