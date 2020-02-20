@@ -170,6 +170,21 @@ class ByteBlower_Controller_Shell_2G(object):
         self.attributes['ByteBlower Controller Shell 2G.Meeting Point'] = value
 
     @property
+    def endpoint_install_path(self):
+        """
+        :rtype: str
+        """
+        return self.attributes['ByteBlower Controller Shell 2G.Endpoint Install Path'] if 'ByteBlower Controller Shell 2G.Endpoint Install Path' in self.attributes else None
+
+    @endpoint_install_path.setter
+    def endpoint_install_path(self, value):
+        """
+        Full path to endpoint CLT.
+        :type value: str
+        """
+        self.attributes['ByteBlower Controller Shell 2G.Endpoint Install Path'] = value
+
+    @property
     def user(self):
         """
         :rtype: str

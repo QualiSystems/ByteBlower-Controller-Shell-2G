@@ -23,6 +23,8 @@ ports = {'test_config':
               'BB/Module2/trunk-1-45', 'BB/Module2/trunk-1-46', 'BB/Module2/trunk-1-47', 'BB/Module2/trunk-1-48',
               'BB/Module3/PC1X2G', 'BB/Module3/PC2X5G', 'BB/Module3/PC3X2G', 'BB/Module3/PC4X5G']}
 
+ep_clt = 'C:/ByteBlowerWirelessEndpoint/$PLUGINSDIR/BBWEP/byteblower-wireless-endpoint.exe'
+
 
 @pytest.fixture()
 def model():
@@ -44,10 +46,15 @@ def client_install_path():
     yield 'C:/Program Files (x86)/Excentis/ByteBlower-CLT-v2/ByteBlower-CLT.exe'
 
 
-# @pytest.fixture(params=[('test_config', 'test_config')],
-#                 ids=['test_config'])
-@pytest.fixture(params=[('test_config_4_cpes', 'test_config_4_cpes')],
-                ids=['test_config_4_cpes'])
+@pytest.fixture()
+def endpoint_install_path():
+    yield 'C:/ByteBlowerWirelessEndpoint/$PLUGINSDIR/BBWEP/byteblower-wireless-endpoint.exe'
+
+
+@pytest.fixture(params=[('test_config', 'test_config')],
+                ids=['test_config'])
+# @pytest.fixture(params=[('test_config_4_cpes', 'test_config_4_cpes')],
+#                 ids=['test_config_4_cpes'])
 def configuration(request):
     config_file = path.join(path.dirname(__file__), request.param[0]) + '.bbp'
     scenario = request.param[1]
@@ -60,11 +67,12 @@ def session():
 
 
 @pytest.fixture()
-def driver(session, model, server, client_install_path):
+def driver(session, model, server, client_install_path, endpoint_install_path):
     address, meeting_point = server
     attributes = {model + '.Address': address,
                   model + '.Meeting Point': meeting_point,
-                  model + '.Client Install Path': client_install_path}
+                  model + '.Client Install Path': client_install_path,
+                  model + '.Endpoint Install Path': endpoint_install_path}
     init_context = create_init_command_context(session, 'CS_TrafficGeneratorController', model, 'na', attributes,
                                                'Service')
     driver = ByteBlowerControllerShell2GDriver()
@@ -75,11 +83,12 @@ def driver(session, model, server, client_install_path):
 
 
 @pytest.fixture()
-def context(session, model, alias, server, client_install_path, configuration):
+def context(session, model, alias, server, client_install_path, configuration, endpoint_install_path):
     address, meeting_point = server
     attributes = [AttributeNameValue(model + '.Address', address),
                   AttributeNameValue(model + '.Meeting Point', meeting_point),
-                  AttributeNameValue(model + '.Client Install Path', client_install_path)]
+                  AttributeNameValue(model + '.Client Install Path', client_install_path),
+                  AttributeNameValue(model + '.Endpoint Install Path', endpoint_install_path)]
     context = create_service_command_context(session, model, alias, attributes)
     add_resources_to_reservation(context, *ports[configuration[0].split('/')[-1].split('.')[0]])
     reservation_ports = get_resources_from_reservation(context,
@@ -99,6 +108,13 @@ class TestByteBlowerControllerDriver(object):
     def test_load_config(self, driver, context, configuration):
         driver.load_config(context, *configuration)
 
+    def test_load_invalid_config(self, driver, context, configuration):
+        with pytest.raises(Exception) as _:
+            driver.load_config(context, 'invalid_config_name', configuration[1])
+        with pytest.raises(Exception) as _:
+            driver.load_config(context, configuration[0], 'invalid_scenario_name')
+            driver.start_traffic(context, 'False')
+
     def test_run_traffic(self, driver, context, configuration):
         driver.load_config(context, *configuration)
 
@@ -112,6 +128,21 @@ class TestByteBlowerControllerDriver(object):
         output = driver.get_statistics(context, None, None)
         print('output folder = {}'.format(output))
 
+    def test_rerun_traffic(self, driver, context, configuration):
+
+        for _ in range(0, 4):
+            driver.load_config(context, *configuration)
+            driver.start_traffic(context, 'False')
+            status = driver.get_test_status(context)
+            while status.lower() != 'finished':
+                time.sleep(1)
+                print(driver.get_rt_statistics(context))
+                status = driver.get_test_status(context)
+            driver.stop_traffic(context)
+            output = driver.get_statistics(context, None, None)
+            print('output folder = {}'.format(output))
+            driver.load_config(context, *configuration)
+
 
 class TestByteBlowerControllerShell(object):
 
@@ -121,12 +152,11 @@ class TestByteBlowerControllerShell(object):
                                [InputNameValue('config_file_location', configuration[0]),
                                 InputNameValue('scenario', configuration[1])])
 
-    def test_run_traffic(self, session, context, alias):
-        config_file = path.join(path.dirname(__file__), 'test_config.bbp')
+    def test_run_traffic(self, session, context, alias, configuration):
         session.ExecuteCommand(get_reservation_id(context), alias, 'Service',
                                'load_config',
-                               [InputNameValue('config_file_location', config_file),
-                                InputNameValue('scenario', 'CloudShellPoC')])
+                               [InputNameValue('config_file_location', configuration[0]),
+                                InputNameValue('scenario', configuration[1])])
 
         session.ExecuteCommand(get_reservation_id(context), alias, 'Service',
                                'start_traffic',
@@ -147,3 +177,30 @@ class TestByteBlowerControllerShell(object):
                                        [InputNameValue('view_name', None),
                                         InputNameValue('output_type', None)])
         print(stats.Output)
+
+    def test_rerun_traffic(self, session, context, alias, configuration):
+        for _ in range(0, 4):
+            session.ExecuteCommand(get_reservation_id(context), alias, 'Service',
+                                   'load_config',
+                                   [InputNameValue('config_file_location', configuration[0]),
+                                    InputNameValue('scenario', configuration[1])])
+
+            session.ExecuteCommand(get_reservation_id(context), alias, 'Service',
+                                   'start_traffic',
+                                   [InputNameValue('blocking', 'False')])
+            status = session.ExecuteCommand(get_reservation_id(context), alias, 'Service',
+                                            'get_test_status')
+            while status.Output.lower() != 'finished':
+                time.sleep(1)
+                rt_stats = session.ExecuteCommand(get_reservation_id(context), alias, 'Service',
+                                                  'get_rt_statistics')
+                print(rt_stats.Output)
+                status = session.ExecuteCommand(get_reservation_id(context), alias, 'Service',
+                                                'get_test_status')
+            session.ExecuteCommand(get_reservation_id(context), alias, 'Service',
+                                   'stop_traffic')
+            stats = session.ExecuteCommand(get_reservation_id(context), alias, 'Service',
+                                           'get_statistics',
+                                           [InputNameValue('view_name', None),
+                                            InputNameValue('output_type', None)])
+            print(stats.Output)

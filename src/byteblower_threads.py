@@ -1,17 +1,17 @@
 
 from __future__ import print_function # Only Python 2.x
+import sys
 import threading
 import subprocess
 import re
 import rpyc
-
-
-ep_clt = 'C:/ByteBlowerWirelessEndpoint/$PLUGINSDIR/BBWEP/byteblower-wireless-endpoint.exe'
+import io
+import os
 
 
 class ServerThread(threading.Thread):
 
-    def __init__(self, logger, clt, project, scenario, output, interval=0.1):
+    def __init__(self, logger, clt, project, scenario, output, interval=1):
         threading.Thread.__init__(self)
         self.logger = logger
         self.clt = clt
@@ -24,6 +24,7 @@ class ServerThread(threading.Thread):
         self.logger.info("Server thread Initiated")
         self.failed = None
         self.popen = None
+        self.traffic_running = False
 
     def stop(self):
         self.logger.debug('Stopping Server thread')
@@ -35,29 +36,38 @@ class ServerThread(threading.Thread):
         self.logger.info('Starting Server thread')
         server_cmd = [self.clt, '-project', self.project, '-scenario', self.scenario, '-output', self.output]
         self.logger.info('Run Server command - {}'.format(server_cmd))
-        self.popen = subprocess.Popen(server_cmd, stdout=subprocess.PIPE, universal_newlines=True)
-        while not self.finished.isSet():
-            try:
-                server_stdout = self.popen.stdout.readline().strip()
-                self.logger.debug('server_stdout: ' + server_stdout)
-                if server_stdout == 'FINISHED':
-                    break
-                elif '!MESSAGE Failed' in server_stdout:
-                    self.failed = server_stdout
+        self.traffic_running = False
+        filename, suffix = os.path.splitext(self.logger.handlers[0].baseFilename)
+        clt_logger = filename + '-clt' + suffix
+        with io.open(clt_logger, 'wb') as writer, io.open(clt_logger, 'rb', 1) as reader:
+            self.popen = subprocess.Popen(server_cmd, stdout=writer, stderr=writer, universal_newlines=True)
+            while self.popen.poll() is None:
+                output = reader.read()
+                sys.stdout.write(output)
+                if 'StartTraffic' in output:
+                    self.traffic_running = True
+                elif 'StopTraffic' in output:
+                    self.traffic_running = False
+                elif '!MESSAGE Failed' in output:
+                    self.failed = output
                     break
                 self.finished.wait(self.interval)
-            except Exception as e:
-                self.logger.debug('server_stdout: ' + str(e))
-                self.failed = str(e)
+            output = reader.read()
+            sys.stdout.write(output)
+
+        return_code = self. popen.wait()
+        if return_code:
+            self.failed = 'Non-zero return code - {}'.format(return_code)
 
 
 class EpThread(threading.Thread):
 
-    def __init__(self, logger, ip, meetingpoint, name, interval=0.25):
+    def __init__(self, logger, ip, meetingpoint, ep_clt, name, interval=0.25):
         threading.Thread.__init__(self)
         self.logger = logger
         self.ip = ip
         self.meetingpoint = meetingpoint
+        self.ep_clt = ep_clt
         self.name = name
         self.interval = interval
         self.finished = threading.Event()
@@ -75,7 +85,7 @@ class EpThread(threading.Thread):
     def run(self):
         self.logger.info('Starting {} thread'.format(self.name))
         c = rpyc.classic.connect(self.ip)
-        ep_cmd = [ep_clt, self.meetingpoint]
+        ep_cmd = [self.ep_clt, self.meetingpoint]
         self.logger.debug('EP {} command: {}'.format(self.name, ep_cmd))
         self.popen = c.modules.subprocess.Popen(ep_cmd, stdout=c.modules.subprocess.PIPE, stderr=c.modules.subprocess.PIPE)
         while not self.finished.isSet():

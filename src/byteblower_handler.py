@@ -97,7 +97,8 @@ class ByteBlowerHandler(TrafficHandler):
         self.eps_threads = {}
         for name, ep in self.reservation_eps.items():
             ep_ip = get_family_attribute(context, ep.Name, 'Address')
-            self.eps_threads[name] = EpThread(self.logger, ep_ip, self.service.meeting_point, name)
+            self.eps_threads[name] = EpThread(self.logger, ep_ip, self.service.meeting_point,
+                                              self.service.endpoint_install_path, name)
             self.eps_threads[name].start()
             time.sleep(1)
             if not self.eps_threads[name].popen:
@@ -149,6 +150,7 @@ class ByteBlowerHandler(TrafficHandler):
             cumulative = bb_port.CumulativeLatestGet()
             interval = bb_port.IntervalLatestGet()
             rt_stats[name] = [cumulative.ByteCountGet(), interval.ByteCountGet()]
+            self.logger.debug('Port {} stats: {}'.format(name, rt_stats[name]))
         return rt_stats
 
     def get_statistics(self, context, view_name, output_type):

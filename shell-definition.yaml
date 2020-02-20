@@ -26,4 +26,9 @@ node_types:
         type: string
         tags:
         - user_input
+      Endpoint Install Path:
+        description: Full path to endpoint CLT.
+        type: string
+        tags:
+        - user_input
 tosca_definitions_version: tosca_simple_yaml_1_0
