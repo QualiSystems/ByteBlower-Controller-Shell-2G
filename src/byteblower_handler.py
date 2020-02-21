@@ -37,6 +37,7 @@ class ByteBlowerHandler(TrafficHandler):
         super(self.__class__, self).initialize(service, logger)
 
     def cleanup(self):
+        self.stop_traffic()
         if self.project:
             if os.path.exists(self.project):
                 os.remove(self.project)
@@ -74,7 +75,19 @@ class ByteBlowerHandler(TrafficHandler):
             if xml_gui_port.find('ByteBlowerGuiPortConfiguration').attrib['physicalPortId'] != '-1':
                 identifier = int(bb_port_name.split('-')[-1]) - 1
                 xml_gui_port.find('ByteBlowerGuiPortConfiguration').attrib['physicalPortId'] = str(identifier)
-            self.bb_ports[logical_name] = server.PortCreate(bb_port_name).RxTriggerBasicAdd().ResultHistoryGet()
+            trigger = server.PortCreate(bb_port_name).RxTriggerBasicAdd()
+            if xml_gui_port.find('ByteBlowerGuiPortConfiguration').attrib['physicalPortId'] == '-1':
+                ip = ''
+                xml_wan_ip = xml_gui_port.find('ipv4Configuration').find('IpAddress')
+                for xml_byte in xml_wan_ip.findall('bytes'):
+                    byte = xml_byte.text
+                    if int(byte) < 0:
+                        byte = str(int(byte) + 256)
+                    ip += byte
+                    ip += '.'
+                ip = ip.rstrip('.')
+                trigger.FilterSet('ip and host {}'.format(ip))
+            self.bb_ports[logical_name] = trigger.ResultHistoryGet()
 
         xml.write(self.project)
         # When we write the new xml, the root element is written in different style then the original one, probably

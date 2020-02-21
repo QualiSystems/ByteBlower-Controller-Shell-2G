@@ -37,6 +37,7 @@ class ServerThread(threading.Thread):
         server_cmd = [self.clt, '-project', self.project, '-scenario', self.scenario, '-output', self.output]
         self.logger.info('Run Server command - {}'.format(server_cmd))
         self.traffic_running = False
+        self.failed = None
         filename, suffix = os.path.splitext(self.logger.handlers[0].baseFilename)
         clt_logger = filename + '-clt' + suffix
         with io.open(clt_logger, 'wb') as writer, io.open(clt_logger, 'rb', 1) as reader:
@@ -75,6 +76,7 @@ class EpThread(threading.Thread):
         self.finished = threading.Event()
         self.setDaemon(True)
         self.counters = []
+        self.rpyc = None
         self.popen = None
         self.logger.info('EP {} thread Initiated'.format(self.name))
 
@@ -86,10 +88,10 @@ class EpThread(threading.Thread):
 
     def run(self):
         self.logger.info('Starting {} thread'.format(self.name))
-        c = rpyc.classic.connect(self.ip)
+        self.rpyc = rpyc.classic.connect(self.ip)
         ep_cmd = [self.ep_clt, self.meetingpoint]
         self.logger.debug('EP {} command: {}'.format(self.name, ep_cmd))
-        self.popen = c.modules.subprocess.Popen(ep_cmd, stdout=c.modules.subprocess.PIPE, stderr=c.modules.subprocess.PIPE)
+        self.popen = self.rpyc.modules.subprocess.Popen(ep_cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         while not self.finished.isSet():
             self.finished.wait(self.interval)
             raw_status = self.popen.stdout.readline().strip()

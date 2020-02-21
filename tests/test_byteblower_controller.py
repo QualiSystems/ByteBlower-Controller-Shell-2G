@@ -130,7 +130,6 @@ class TestByteBlowerControllerDriver(object):
             driver.stop_traffic(context)
             output = driver.get_statistics(context, None, None)
             print('output folder = {}'.format(output))
-            driver.load_config(context, *configuration)
 
 
 class TestByteBlowerControllerShell(object):
