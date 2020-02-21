@@ -13,11 +13,12 @@ from shellfoundry.releasetools.test_helper import (create_session_from_deploymen
 from src.byteblower_driver import ByteBlowerControllerShell2GDriver
 
 eps_logical_names = ['EP01_2G', 'EP02_5G', 'EP03_2G', 'EP04_5G']
+eps_ssids = ['MV2-HW11-2.4GHz', 'MV2-HW11-2.4GHz', 'MV2-HW11-2.4GHz', 'MV2-HW11-2.4GHz']
 ports_logical_names = ['WAN_PORT', 'PORT_A', 'PORT_B', 'PORT_C', 'PORT_D']
 
 ports = {'test_config':
              ['BB/Module1/nontrunk-1', 'BB/Module2/trunk-1-45',
-              'BB/Module3/PC1X2G'],
+              'BB/Module3/PC3X2G'],
          'test_config_4_cpes':
              ['BB/Module1/nontrunk-1',
               'BB/Module2/trunk-1-45', 'BB/Module2/trunk-1-46', 'BB/Module2/trunk-1-47', 'BB/Module2/trunk-1-48',
@@ -93,12 +94,13 @@ def context(session, model, alias, server, client_install_path, configuration, e
     add_resources_to_reservation(context, *ports[configuration[0].split('/')[-1].split('.')[0]])
     reservation_ports = get_resources_from_reservation(context,
                                                        'ByteBlower Chassis Shell 2G.GenericTrafficGeneratorPort')
-    for i, ep in enumerate(reservation_ports):
-        set_family_attribute(context, ep, 'Logical Name', ports_logical_names[i])
+    for i, port in enumerate(reservation_ports):
+        set_family_attribute(context, port.Name, 'Logical Name', ports_logical_names[i])
     reservation_eps = get_resources_from_reservation(context,
                                                      'ByteBlower Chassis Shell 2G.ByteBlowerEndPoint')
     for i, ep in enumerate(reservation_eps):
-        set_family_attribute(context, ep, 'Logical Name', eps_logical_names[i])
+        set_family_attribute(context, ep.Name, 'Logical Name', eps_logical_names[i])
+        set_family_attribute(context, ep.Name, 'SSID', eps_ssids[i])
     yield context
     end_reservation(session, get_reservation_id(context))
 
