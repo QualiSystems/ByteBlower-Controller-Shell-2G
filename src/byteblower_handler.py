@@ -136,8 +136,9 @@ class ByteBlowerHandler(TrafficHandler):
             pass
 
     def stop_traffic(self):
-        for ep_thread in self.eps_threads.values():
-            ep_thread.stop()
+        if self.eps_threads:
+            for ep_thread in self.eps_threads.values():
+                ep_thread.stop()
         if self.server_thread:
             self.server_thread.stop()
 
@@ -164,7 +165,11 @@ class ByteBlowerHandler(TrafficHandler):
             bb_port.Refresh()
             cumulative = bb_port.CumulativeLatestGet()
             interval = bb_port.IntervalLatestGet()
-            rt_stats[name] = [cumulative.ByteCountGet(), interval.ByteCountGet()]
+            cumulative_bytes = cumulative.ByteCountGet()
+            cumulative_mb = '{0:.2f}'.format(cumulative_bytes * 8 / 1000000.0)
+            interval_bytes = interval.ByteCountGet()
+            interval_mb = '{0:.2f}'.format(interval_bytes * 8 / 1000000.0)
+            rt_stats[name] = [cumulative_mb, interval_mb]
             self.logger.debug('Port {} stats: {}'.format(name, rt_stats[name]))
         return rt_stats
 

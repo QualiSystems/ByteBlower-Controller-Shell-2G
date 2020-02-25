@@ -14,11 +14,11 @@ from src.byteblower_driver import ByteBlowerControllerShell2GDriver
 
 eps_logical_names = ['EP01_2G', 'EP02_5G', 'EP03_2G', 'EP04_5G']
 eps_ssids = ['MV2-HW11-2.4GHz', 'MV2-HW11-2.4GHz', 'MV2-HW11-2.4GHz', 'MV2-HW11-2.4GHz']
-ports_logical_names = ['WAN_PORT', 'PORT_A', 'PORT_B', 'PORT_C', 'PORT_D']
+ports_logical_names = ['PORT_A', 'PORT_B', 'PORT_C', 'PORT_D']
 
 ports = {'test_config':
              ['BB/Module1/nontrunk-1', 'BB/Module2/trunk-1-45',
-              'BB/Module3/PC3X2G'],
+              'BB/Module3/PC2X5G'],
          'test_config_4_cpes':
              ['BB/Module1/nontrunk-1',
               'BB/Module2/trunk-1-45', 'BB/Module2/trunk-1-46', 'BB/Module2/trunk-1-47', 'BB/Module2/trunk-1-48',
@@ -94,7 +94,9 @@ def context(session, model, alias, server, client_install_path, configuration, e
     add_resources_to_reservation(context, *ports[configuration[0].split('/')[-1].split('.')[0]])
     reservation_ports = get_resources_from_reservation(context,
                                                        'ByteBlower Chassis Shell 2G.GenericTrafficGeneratorPort')
-    for i, port in enumerate(reservation_ports):
+    wan_port = [p for p in reservation_ports if 'nontrunk' in p.Name][0]
+    set_family_attribute(context, wan_port.Name, 'Logical Name', 'WAN_PORT')
+    for i, port in enumerate([p for p in reservation_ports if 'nontrunk' not in p.Name]):
         set_family_attribute(context, port.Name, 'Logical Name', ports_logical_names[i])
     reservation_eps = get_resources_from_reservation(context,
                                                      'ByteBlower Chassis Shell 2G.ByteBlowerEndPoint')
@@ -140,7 +142,7 @@ class TestByteBlowerControllerShell(object):
                                [InputNameValue('config_file_location', configuration[0]),
                                 InputNameValue('scenario', configuration[1])])
 
-    def test_rerun_traffic(self, session, context, alias, configuration):
+    def test_run_traffic(self, session, context, alias, configuration):
 
         for _ in range(0, 1):
             session.ExecuteCommand(get_reservation_id(context), alias, 'Service',
