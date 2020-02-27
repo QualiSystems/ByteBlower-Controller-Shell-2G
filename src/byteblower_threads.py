@@ -6,6 +6,7 @@ import re
 import rpyc
 import io
 import os
+import psutil
 
 
 class ServerThread(threading.Thread):
@@ -24,13 +25,19 @@ class ServerThread(threading.Thread):
         self.failed = None
         self.popen = None
         self.traffic_running = False
+        self._kill_clt()
 
     def stop(self):
         self.logger.debug('Stopping Server thread')
         self.finished.set()
-        self.join()
-        self.popen.terminate()
+        if self.popen:
+            self.popen.terminate()
+        self.logger.debug('Past Server Thread Terminate Call')
         self.traffic_running = False
+
+        # in case clt exists, just to be sure
+        self._kill_clt()
+
 
     def run(self):
         self.logger.info('Starting Server thread')
@@ -62,6 +69,24 @@ class ServerThread(threading.Thread):
         if self.failed:
             raise Exception(self.failed)
 
+    def _kill_clt(self):
+        name = "ByteBlower-CLT.exe"
+        processes = []
+        for process in psutil.process_iter():
+            name_, exe, cmdline = "", "", []
+            try:
+                name_ = process.name()
+                cmdline = process.cmdline()
+                exe = process.exe()
+            except (psutil.AccessDenied, psutil.ZombieProcess, OSError, SystemError):
+                pass
+            except psutil.NoSuchProcess:
+                continue
+            if name == name_ or (cmdline and cmdline[0]) == name or os.path.basename(exe) == name:
+                processes.append(process)
+        if processes:
+            processes[0].kill()
+
 
 class EpThread(threading.Thread):
 
@@ -83,8 +108,9 @@ class EpThread(threading.Thread):
     def stop(self):
         self.logger.info('Stopping {} thread'.format(self.name))
         self.finished.set()
-        self.join()
-        self.popen.terminate()
+        # self.join()
+        if self.popen:
+            self.popen.terminate()
 
     def run(self):
         self.logger.info('Starting {} thread'.format(self.name))

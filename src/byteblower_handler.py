@@ -172,7 +172,8 @@ class ByteBlowerHandler(TrafficHandler):
             cumulative_mb = '{0:.2f}'.format(cumulative_bytes * 8 / 1000000.0)
             interval_bytes = interval.ByteCountGet()
             interval_mb = '{0:.2f}'.format(interval_bytes * 8 / 1000000.0)
-            rt_stats[name] = [cumulative_mb, interval_mb]
+            # intended Tx placeholder of -1 [cumulative, Rx rate, Intended Tx Placeholder]
+            rt_stats[name] = [cumulative_mb, interval_mb, -1]
             self.logger.debug('Port {} stats: {}'.format(name, rt_stats[name]))
         return rt_stats
 

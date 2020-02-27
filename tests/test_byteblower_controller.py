@@ -18,7 +18,7 @@ ports_logical_names = ['PORT_A', 'PORT_B', 'PORT_C', 'PORT_D']
 
 ports = {'test_config':
              ['BB/Module1/nontrunk-1', 'BB/Module2/trunk-1-45',
-              'BB/Module3/PC2X5G'],
+              'BB/Module3/PC1X2G'],
          'test_config_4_cpes':
              ['BB/Module1/nontrunk-1',
               'BB/Module2/trunk-1-45', 'BB/Module2/trunk-1-46', 'BB/Module2/trunk-1-47', 'BB/Module2/trunk-1-48',
