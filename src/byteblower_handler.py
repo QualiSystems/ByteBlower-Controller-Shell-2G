@@ -116,7 +116,8 @@ class ByteBlowerHandler(TrafficHandler):
             self.eps_threads[name].start()
             time.sleep(1)
             if not self.eps_threads[name].popen:
-                raise Exception('Failed ro start thread on EP {}, IP {}'.format(name, ep_ip))
+                self.stop_traffic()
+                raise Exception('Failed to start thread on EP {}, IP {}'.format(name, ep_ip))
 
         # add delay to ensure clients are registered before starting traffic
         time.sleep(8)
@@ -125,10 +126,12 @@ class ByteBlowerHandler(TrafficHandler):
         self.server_thread.start()
         time.sleep(1)
         if not self.server_thread.popen:
+            self.stop_traffic()
             raise Exception('Failed to start thread on server')
         while not self.server_thread.traffic_running:
             time.sleep(1)
             if self.server_thread.failed:
+                self.stop_traffic()
                 raise Exception('Failed to start traffic - {}'.format(self.server_thread.failed))
 
         if is_blocking(blocking):
