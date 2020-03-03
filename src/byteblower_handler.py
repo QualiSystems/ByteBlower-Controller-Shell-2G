@@ -11,7 +11,7 @@ from cloudshell.traffic.tg import BYTEBLOWER_CHASSIS_MODEL
 from cloudshell.traffic.tg_helper import (get_address, is_blocking, get_family_attribute)
 
 from byteblower.byteblowerll import byteblower
-from byteblower_threads import ServerThread, EpThread
+from byteblower_threads import ServerThread, EpThread, EpCmd
 from byteblower_data_model import ByteBlower_Controller_Shell_2G
 
 BYTEBLOWER_PORT_MODEL = BYTEBLOWER_CHASSIS_MODEL + '.GenericTrafficGeneratorPort'
@@ -104,6 +104,8 @@ class ByteBlowerHandler(TrafficHandler):
                 np_f.writelines(new_project_lines)
 
     def start_traffic(self, context, blocking):
+        # check connected state of eps
+        self._validate_endpoint_wifi(context)
 
         log_file_name = self.logger.handlers[0].baseFilename
         self.output = (os.path.splitext(log_file_name)[0] + '--output').replace('\\', '/')
@@ -187,3 +189,31 @@ class ByteBlowerHandler(TrafficHandler):
             raise Exception('Logical name {} not found in configuration ports {}'.
                             format(logical_name, [p.attrib['name'] for p in xml_gui_ports]))
         return requested_xml_gui_ports[0]
+
+    def _validate_endpoint_wifi(self, context):
+        failed = []
+        for name, ep in self.reservation_eps.items():
+            ep_ip = get_family_attribute(context, ep.Name, 'Address')
+            try:
+                ep_cmd = EpCmd(self.logger, ep_ip, name)
+            except Exception as e:
+                self.logger.debug("{} could not establish rypc command connection: {}".format(name, str(e)))
+                raise
+
+            cmd = ['netsh', 'wlan', 'show', 'interfaces', '|', 'findstr', 'State']
+
+            try:
+                outp = ep_cmd.run_command(cmd)
+            except Exception as e:
+                self.logger.debug("{} Issue running rpyc command {}: {}".format(name, cmd, str(e)))
+                raise
+            else:
+                if  'disconnected' in outp:
+                    failed.append((name, ep_ip))
+            finally:
+                ep_cmd.conn.close()
+
+        if failed:
+            raise Exception("The following endpoints are disconnected: {}".format(str(failed)))
+
+

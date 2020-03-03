@@ -127,3 +127,28 @@ class EpThread(threading.Thread):
                 new_status = [status.split()[1]] + re.findall('\d+\.\d+', status)
                 self.counters.append(new_status)
                 self.logger.info('EP {} status: {}'.format(self.name, new_status))
+
+
+class EpCmd(object):
+
+    def __init__(self, logger, ip, name):
+        self.logger = logger
+        self.ip = ip
+        self.name = name
+        self.conn = None
+        self._get_connection()
+
+    def _get_connection(self):
+        self.logger.info(' {} thread'.format(self.name))
+        self.conn = rpyc.classic.connect(self.ip)
+        self.logger.info('EP {} Command Connection Initiated'.format(self.name))
+
+    def run_command(self, ep_cmd):
+        """
+        send command to endpoint as list of of strings ex. ['ping', 'google.com']
+        :param ep_cmd:
+        :return:
+        """
+        self.logger.debug('EP {} command: {}'.format(self.name, ep_cmd))
+        outp = self.conn.modules.subprocess.check_output(ep_cmd)
+        return outp
