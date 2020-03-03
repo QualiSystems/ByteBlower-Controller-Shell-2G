@@ -25,7 +25,6 @@ class ServerThread(threading.Thread):
         self.failed = None
         self.popen = None
         self.traffic_running = False
-        self._kill_clt()
 
     def stop(self):
         self.logger.debug('Stopping Server thread')
@@ -35,8 +34,9 @@ class ServerThread(threading.Thread):
         self.logger.debug('Past Server Thread Terminate Call')
         self.traffic_running = False
 
-        # in case clt exists, just to be sure
-        self._kill_clt()
+        # in case clt exists, kill the pid just to be sure
+        if self.popen:
+            self._kill_clt_by_pid(self.popen.pid)
 
 
     def run(self):
@@ -69,8 +69,8 @@ class ServerThread(threading.Thread):
         if self.failed:
             raise Exception(self.failed)
 
-    def _kill_clt(self):
-        name = "ByteBlower-CLT.exe"
+    def _kill_clt_by_pid(self, pid):
+        name = "ByteBlower-CLT"
         processes = []
         for process in psutil.process_iter():
             name_, exe, cmdline = "", "", []
@@ -82,7 +82,7 @@ class ServerThread(threading.Thread):
                 pass
             except psutil.NoSuchProcess:
                 continue
-            if name == name_ or (cmdline and cmdline[0]) == name or os.path.basename(exe) == name:
+            if name in name_ and process.pid == pid:
                 processes.append(process)
         if processes:
             processes[0].kill()
