@@ -139,7 +139,6 @@ class EpCmd(object):
         self._get_connection()
 
     def _get_connection(self):
-        self.logger.info(' {} thread'.format(self.name))
         self.conn = rpyc.classic.connect(self.ip)
         self.logger.info('EP {} Command Connection Initiated'.format(self.name))
 
@@ -151,4 +150,5 @@ class EpCmd(object):
         """
         self.logger.debug('EP {} command: {}'.format(self.name, ep_cmd))
         outp = self.conn.modules.subprocess.check_output(ep_cmd)
+        self.logger.debug('EP {} command: {}, returned with output: {}'.format(self.name, ep_cmd, outp))
         return outp

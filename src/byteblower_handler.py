@@ -191,29 +191,33 @@ class ByteBlowerHandler(TrafficHandler):
         return requested_xml_gui_ports[0]
 
     def _validate_endpoint_wifi(self, context):
-        failed = []
+        disconnected_eps = []
         for name, ep in self.reservation_eps.items():
             ep_ip = get_family_attribute(context, ep.Name, 'Address')
             try:
                 ep_cmd = EpCmd(self.logger, ep_ip, name)
             except Exception as e:
-                self.logger.debug("{} could not establish rypc command connection: {}".format(name, str(e)))
-                raise
+                msg = "{} could not establish rypc command connection: {}".format(name, str(e))
+                self.logger.debug(msg)
+                raise Exception(msg)
 
             cmd = ['netsh', 'wlan', 'show', 'interfaces', '|', 'findstr', 'State']
 
             try:
                 outp = ep_cmd.run_command(cmd)
             except Exception as e:
-                self.logger.debug("{} Issue running rpyc command {}: {}".format(name, cmd, str(e)))
-                raise
+                msg = "{} had issue running rpyc command {}: {}".format(name, cmd, str(e))
+                self.logger.debug(msg)
+                raise Exception(msg)
             else:
                 if  'disconnected' in outp:
-                    failed.append((name, ep_ip))
+                    disconnected_eps.append((name, ep_ip))
             finally:
                 ep_cmd.conn.close()
+                self.logger.debug("{} command connection closed".format(name))
 
-        if failed:
-            raise Exception("The following endpoints are disconnected: {}".format(str(failed)))
+
+        if disconnected_eps:
+            raise Exception("The following endpoints are disconnected from wifi: {}".format(str(disconnected_eps)))
 
 
