@@ -28,6 +28,7 @@ class ByteBlowerHandler(TrafficHandler):
         self.reservation_ports = {}
         self.reservation_eps = {}
         self.bb_ports = {}
+        self.intended_tx = {}
         self.project = None
         self.scenario = None
 
@@ -103,6 +104,8 @@ class ByteBlowerHandler(TrafficHandler):
                 np_f.seek(0)
                 np_f.writelines(new_project_lines)
 
+        self.intended_tx = get_intended_tx(project)
+
     def start_traffic(self, context, blocking):
         # check connected state of eps
         self._validate_endpoint_wifi(context)
@@ -175,7 +178,7 @@ class ByteBlowerHandler(TrafficHandler):
             interval_bytes = interval.ByteCountGet()
             interval_mb = '{0:.2f}'.format(interval_bytes * 8 / 1000000.0)
             # intended Tx placeholder of -1 [cumulative, Rx rate, Intended Tx Placeholder]
-            rt_stats[name] = [cumulative_mb, interval_mb, -1]
+            rt_stats[name] = [cumulative_mb, interval_mb, self.intended_tx[name]]
             self.logger.debug('Port {} stats: {}'.format(name, rt_stats[name]))
         return rt_stats
 
@@ -220,4 +223,38 @@ class ByteBlowerHandler(TrafficHandler):
         if disconnected_eps:
             raise Exception("The following endpoints are disconnected from wifi: {}".format(str(disconnected_eps)))
 
+
+def get_intended_tx(bbl_config_file_name):
+
+    xml = ET.parse(bbl_config_file_name)
+    xml_root = xml.getroot()
+    xml_gui_ports = xml_root.findall('ByteBlowerGuiPort')
+    xml_flows_templates = xml_root.findall('FlowTemplate')
+    xml_frames = xml_root.findall('Frame')
+
+    bb_ports = {}
+    for xml_gui_port in xml_gui_ports:
+        try:
+            int(xml_gui_port.find('ByteBlowerGuiPortConfiguration').attrib['physicalInterfaceId'])
+            bb_port = xml_gui_port.attrib['name']
+            bb_ports[bb_port] = {}
+            for bb_flow in xml_gui_port.attrib['theSourceOfFlow'].split():
+                bb_ports[bb_port][bb_flow] = {}
+                xml_flow = [f for f in xml_flows_templates if f.attrib['Flow'] == bb_flow][0]
+                bb_ports[bb_port][bb_flow]['template'] = xml_flow
+                frame_index = int(xml_flow.find('frameBlastingFrames').attrib['frame'].split('.')[-1])
+                bb_ports[bb_port][bb_flow]['frame'] = xml_frames[frame_index]
+        except ValueError as _:
+            pass
+
+    bb_ports_intended_tx = {}
+    for bb_port, bb_flows in bb_ports.items():
+        bb_ports_intended_tx[bb_port] = 0
+        for bb_flow in bb_flows.values():
+            frame_interval_ns = float(bb_flow['template'].attrib['frameInterval'])
+            frame_length = len(bb_flow['frame'].attrib['bytesHexString']) / 2
+            intended_mbps = 1000000000 / frame_interval_ns * frame_length * 8 / 1000 / 1000
+            bb_ports_intended_tx[bb_port] += int(intended_mbps)
+
+    return bb_ports_intended_tx
 

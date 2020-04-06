@@ -52,10 +52,10 @@ def endpoint_install_path():
     yield 'C:/ByteBlowerWirelessEndpoint/$PLUGINSDIR/BBWEP/byteblower-wireless-endpoint.exe'
 
 
-@pytest.fixture(params=[('test_config', 'test_config')],
-                ids=['test_config'])
-# @pytest.fixture(params=[('test_config_4_cpes', 'test_config_4_cpes')],
-#                 ids=['test_config_4_cpes'])
+# @pytest.fixture(params=[('test_config', 'test_config')],
+#                 ids=['test_config'])
+@pytest.fixture(params=[('test_config_4_cpes', 'test_config_4_cpes')],
+                ids=['test_config_4_cpes'])
 def configuration(request):
     config_file = path.join(path.dirname(__file__), request.param[0]) + '.bbp'
     scenario = request.param[1]
