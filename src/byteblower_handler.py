@@ -223,6 +223,40 @@ class ByteBlowerHandler(TrafficHandler):
         if disconnected_eps:
             raise Exception("The following endpoints are disconnected from wifi: {}".format(str(disconnected_eps)))
 
+        return "All Endpoints Connected to Wifi"
+
+    def connect_endpoints(self, context):
+        disconnected_eps = []
+        for name, ep in self.reservation_eps.items():
+            ep_ip = get_family_attribute(context, ep.Name, 'Address')
+            try:
+                ep_cmd = EpCmd(self.logger, ep_ip, name)
+            except Exception as e:
+                msg = "{} could not establish rypc command connection: {}".format(name, str(e))
+                self.logger.debug(msg)
+                raise Exception(msg)
+
+            cmd = ['netsh', 'wlan', 'show', 'interfaces', '|', 'findstr', 'State']
+
+            try:
+                outp = ep_cmd.run_command(cmd)
+            except Exception as e:
+                msg = "{} had issue running rpyc command {}: {}".format(name, cmd, str(e))
+                self.logger.debug(msg)
+                raise Exception(msg)
+            else:
+                if  'disconnected' in outp:
+                    disconnected_eps.append((name, ep_ip))
+            finally:
+                ep_cmd.conn.close()
+                self.logger.debug("{} command connection closed".format(name))
+
+
+        if disconnected_eps:
+            raise Exception("The following endpoints are disconnected from wifi: {}".format(str(disconnected_eps)))
+
+        return "All Endpoints Connected to Wifi"
+
 
 def get_intended_tx(bbl_config_file_name):
 

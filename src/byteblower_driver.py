@@ -40,6 +40,10 @@ class ByteBlowerControllerShell2GDriver(TgControllerDriver):
         """
         return super(self.__class__, self).get_statistics(context, view_name, output_type)
 
+    def endpoint_health_check(self, context):
+        """ Get real time statistics for all ports and endpoints. """
+        return self.handler._validate_endpoint_wifi(context)
+
     #
     # Parent commands are not visible so we re define them in child.
     #
