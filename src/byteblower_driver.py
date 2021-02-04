@@ -1,5 +1,5 @@
 
-from cloudshell.traffic.tg import TgControllerDriver, enqueue_keep_alive
+from cloudshell.traffic.tg import TgControllerDriver
 
 from byteblower_handler import ByteBlowerHandler
 
@@ -10,19 +10,18 @@ class ByteBlowerControllerShell2GDriver(TgControllerDriver):
         self.handler = ByteBlowerHandler()
 
     def load_config(self, context, config_file_location, scenario):
-        enqueue_keep_alive(context)
-        self.handler.load_config(context, config_file_location, scenario)
+        super().load_config(context, config_file_location)
 
     def start_traffic(self, context, blocking):
         """ Start traffic on all ports.
 
         :param blocking: True - return after traffic finish to run, False - return immediately.
         """
-        return super(self.__class__, self).start_traffic(context, blocking)
+        return super().start_traffic(context, blocking)
 
     def stop_traffic(self, context):
         """ Stop traffic on all ports. """
-        return super(self.__class__, self).stop_traffic(context)
+        return super().stop_traffic(context)
 
     def get_test_status(self, context):
         """ Get test status - not started, running, finished. """
@@ -38,7 +37,7 @@ class ByteBlowerControllerShell2GDriver(TgControllerDriver):
         :param view_name: port, traffic item, flow group etc.
         :param output_type: CSV or JSON.
         """
-        return super(self.__class__, self).get_statistics(context, view_name, output_type)
+        return super().get_statistics(context, view_name, output_type)
 
     def endpoint_health_check(self, context):
         """ Get real time statistics for all ports and endpoints. """
@@ -49,14 +48,13 @@ class ByteBlowerControllerShell2GDriver(TgControllerDriver):
     #
 
     def initialize(self, context):
-        super(self.__class__, self).initialize(context)
+        super().initialize(context)
 
     def cleanup(self):
-        super(self.__class__, self).cleanup()
+        super().cleanup()
 
     def cleanup_reservation(self, context):
         pass
 
     def keep_alive(self, context, cancellation_context):
-        super(self.__class__, self).keep_alive(context, cancellation_context)
-
+        super().keep_alive(context, cancellation_context)

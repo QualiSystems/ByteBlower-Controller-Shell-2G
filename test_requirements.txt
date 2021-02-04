@@ -1,4 +1,6 @@
 -r src/requirements.txt
 
 pytest
-GitPython
+PyYAML
+
+shellfoundry_traffic

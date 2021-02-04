@@ -1,12 +1,12 @@
 
-from __future__ import print_function # Only Python 2.x
-import threading
-import subprocess
-import re
-import rpyc
 import io
 import os
 import psutil
+import re
+import subprocess
+import threading
+
+import rpyc
 
 
 class ServerThread(threading.Thread):
@@ -21,7 +21,7 @@ class ServerThread(threading.Thread):
         self.interval = interval
         self.finished = threading.Event()
         self.setDaemon(True)
-        self.logger.info("Server thread Initiated")
+        self.logger.info('Server thread Initiated')
         self.failed = None
         self.popen = None
         self.traffic_running = False
@@ -38,11 +38,10 @@ class ServerThread(threading.Thread):
         if self.popen:
             self._kill_clt_by_pid(self.popen.pid)
 
-
     def run(self):
         self.logger.info('Starting Server thread')
         server_cmd = [self.clt, '-project', self.project, '-scenario', self.scenario, '-output', self.output]
-        self.logger.info('Run Server command - {}'.format(server_cmd))
+        self.logger.info(f'Run Server command - {server_cmd}')
         self.traffic_running = False
         self.failed = None
         filename, suffix = os.path.splitext(self.logger.handlers[0].baseFilename)
@@ -70,14 +69,14 @@ class ServerThread(threading.Thread):
             raise Exception(self.failed)
 
     def _kill_clt_by_pid(self, pid):
-        name = "ByteBlower-CLT"
+        name = 'ByteBlower-CLT'
         processes = []
         for process in psutil.process_iter():
-            name_, exe, cmdline = "", "", []
+            name_, exe, cmdline = '', '', []
             try:
                 name_ = process.name()
-                cmdline = process.cmdline()
-                exe = process.exe()
+                process.cmdline()
+                process.exe()
             except (psutil.AccessDenied, psutil.ZombieProcess, OSError, SystemError):
                 pass
             except psutil.NoSuchProcess:
@@ -103,30 +102,30 @@ class EpThread(threading.Thread):
         self.counters = []
         self.rpyc = None
         self.popen = None
-        self.logger.info('EP {} thread Initiated'.format(self.name))
+        self.logger.info(f'EP {self.name} thread Initiated')
 
     def stop(self):
-        self.logger.info('Stopping {} thread'.format(self.name))
+        self.logger.info(f'Stopping {self.name} thread')
         self.finished.set()
         # self.join()
         if self.popen:
             self.popen.terminate()
 
     def run(self):
-        self.logger.info('Starting {} thread'.format(self.name))
+        self.logger.info(f'Starting {self.name} thread')
         self.rpyc = rpyc.classic.connect(self.ip)
         ep_cmd = [self.ep_clt, self.meetingpoint]
-        self.logger.debug('EP {} command: {}'.format(self.name, ep_cmd))
+        self.logger.debug(f'EP {self.name} command: {ep_cmd}')
         self.popen = self.rpyc.modules.subprocess.Popen(ep_cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         while not self.finished.isSet():
             self.finished.wait(self.interval)
             raw_status = self.popen.stdout.readline().strip()
-            self.logger.debug('EP {} raw: {}'.format(self.name, raw_status))
+            self.logger.debug(f'EP {self.name} raw: {raw_status}')
             status = raw_status if raw_status.startswith('Status:') else None
             if status:
                 new_status = [status.split()[1]] + re.findall('\d+\.\d+', status)
                 self.counters.append(new_status)
-                self.logger.info('EP {} status: {}'.format(self.name, new_status))
+                self.logger.info(f'EP {self.name} status: {new_status}')
 
 
 class EpCmd(object):
@@ -140,7 +139,7 @@ class EpCmd(object):
 
     def _get_connection(self):
         self.conn = rpyc.classic.connect(self.ip)
-        self.logger.info('EP {} Command Connection Initiated'.format(self.name))
+        self.logger.info(f'EP {self.name} Command Connection Initiated')
 
     def run_command(self, ep_cmd):
         """
@@ -148,7 +147,7 @@ class EpCmd(object):
         :param ep_cmd:
         :return:
         """
-        self.logger.debug('EP {} command: {}'.format(self.name, ep_cmd))
+        self.logger.debug(f'EP {self.name} command: {ep_cmd}')
         outp = self.conn.modules.subprocess.check_output(ep_cmd)
-        self.logger.debug('EP {} command: {}, returned with output: {}'.format(self.name, ep_cmd, outp))
+        self.logger.debug(f'EP {self.name} command: {ep_cmd}, returned with output: {outp}')
         return outp

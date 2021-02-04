@@ -1,27 +1,26 @@
 
-from __future__ import print_function  # Only Python 2.x
-
 import os
-import time
 import tempfile
+import time
 import xml.etree.ElementTree as ET
 
-from cloudshell.traffic.common import TrafficHandler, get_resources_from_reservation
-from cloudshell.traffic.tg import BYTEBLOWER_CHASSIS_MODEL
-from cloudshell.traffic.tg_helper import (get_address, is_blocking, get_family_attribute)
+from cloudshell.traffic.helpers import get_resources_from_reservation, get_family_attribute
+from cloudshell.traffic.tg import BYTEBLOWER_CHASSIS_MODEL, TgControllerHandler, is_blocking
 
 from byteblower.byteblowerll import byteblower
+
 from byteblower_threads import ServerThread, EpThread, EpCmd
 from byteblower_data_model import ByteBlower_Controller_Shell_2G
+
 
 BYTEBLOWER_PORT_MODEL = BYTEBLOWER_CHASSIS_MODEL + '.GenericTrafficGeneratorPort'
 BYTEBLOWER_ENDPOINT_MODEL = BYTEBLOWER_CHASSIS_MODEL + '.ByteBlowerEndPoint'
 
 
-class ByteBlowerHandler(TrafficHandler):
+class ByteBlowerHandler(TgControllerHandler):
 
     def __init__(self):
-        super(self.__class__, self).__init__()
+        super().__init__()
 
         self.server_thread = None
         self.eps_threads = None
@@ -33,9 +32,8 @@ class ByteBlowerHandler(TrafficHandler):
         self.scenario = None
 
     def initialize(self, context, logger):
-
         service = ByteBlower_Controller_Shell_2G.create_from_context(context)
-        super(self.__class__, self).initialize(service, logger)
+        super().initialize(service, logger, service)
 
     def cleanup(self):
         self.stop_traffic()
@@ -47,7 +45,7 @@ class ByteBlowerHandler(TrafficHandler):
 
         project = bbl_config_file_name.replace('\\', '/')
         if not os.path.exists(project):
-            raise EnvironmentError('Configuration file {} not found'.format(self.project))
+            raise EnvironmentError(f'Configuration file {self.project} not found')
         self.project = tempfile.mktemp().replace('\\', '/')
         self.scenario = scenario
 
@@ -87,7 +85,7 @@ class ByteBlowerHandler(TrafficHandler):
                     ip += byte
                     ip += '.'
                 ip = ip.rstrip('.')
-                trigger.FilterSet('ip and host {}'.format(ip))
+                trigger.FilterSet(f'ip and host {ip}')
             self.bb_ports[logical_name] = trigger.ResultHistoryGet()
 
         xml.write(self.project)
@@ -122,7 +120,7 @@ class ByteBlowerHandler(TrafficHandler):
             time.sleep(1)
             if not self.eps_threads[name].popen:
                 self.stop_traffic()
-                raise Exception('Failed to start thread on EP {}, IP {}'.format(name, ep_ip))
+                raise Exception(f'Failed to start thread on EP {name}, IP {ep_ip}')
 
         # add delay to ensure clients are registered before starting traffic
         time.sleep(8)
@@ -137,7 +135,7 @@ class ByteBlowerHandler(TrafficHandler):
             time.sleep(1)
             if self.server_thread.failed:
                 self.stop_traffic()
-                raise Exception('Failed to start traffic - {}'.format(self.server_thread.failed))
+                raise Exception(f'Failed to start traffic - {self.server_thread.failed}')
 
         if is_blocking(blocking):
             # todo: implement wait test.
@@ -155,7 +153,7 @@ class ByteBlowerHandler(TrafficHandler):
             return 'Not started'
         else:
             if self.server_thread.failed:
-                raise Exception('Server Failed: ' + self.server_thread.failed)
+                raise Exception(f'Server Failed: {self.server_thread.failed}')
             if self.server_thread.traffic_running:
                 return 'Running'
             else:
@@ -179,7 +177,7 @@ class ByteBlowerHandler(TrafficHandler):
             interval_mb = '{0:.2f}'.format(interval_bytes * 8 / 1000000.0)
             # intended Tx placeholder of -1 [cumulative, Rx rate, Intended Tx Placeholder]
             rt_stats[name] = [cumulative_mb, interval_mb, self.intended_tx[name]]
-            self.logger.debug('Port {} stats: {}'.format(name, rt_stats[name]))
+            self.logger.debug(f'Port {name} stats: {rt_stats[name]}')
         return rt_stats
 
     def get_statistics(self, context, view_name, output_type):
@@ -200,7 +198,7 @@ class ByteBlowerHandler(TrafficHandler):
             try:
                 ep_cmd = EpCmd(self.logger, ep_ip, name)
             except Exception as e:
-                msg = "{} could not establish rypc command connection: {}".format(name, str(e))
+                msg = f'{name} could not establish rypc command connection: {e}'
                 self.logger.debug(msg)
                 raise Exception(msg)
 
@@ -209,7 +207,7 @@ class ByteBlowerHandler(TrafficHandler):
             try:
                 outp = ep_cmd.run_command(cmd)
             except Exception as e:
-                msg = "{} had issue running rpyc command {}: {}".format(name, cmd, str(e))
+                msg = f'{name} had issue running rpyc command {cmd}: {e}'
                 self.logger.debug(msg)
                 raise Exception(msg)
             else:
@@ -217,13 +215,13 @@ class ByteBlowerHandler(TrafficHandler):
                     disconnected_eps.append((name, ep_ip))
             finally:
                 ep_cmd.conn.close()
-                self.logger.debug("{} command connection closed".format(name))
+                self.logger.debug(f'{name} command connection closed')
 
 
         if disconnected_eps:
-            raise Exception("The following endpoints are disconnected from wifi: {}".format(str(disconnected_eps)))
+            raise Exception(f'The following endpoints are disconnected from wifi: {disconnected_eps}')
 
-        return "All Endpoints Connected to Wifi"
+        return 'All Endpoints Connected to Wifi'
 
     def connect_endpoints(self, context):
         disconnected_eps = []
@@ -232,7 +230,7 @@ class ByteBlowerHandler(TrafficHandler):
             try:
                 ep_cmd = EpCmd(self.logger, ep_ip, name)
             except Exception as e:
-                msg = "{} could not establish rypc command connection: {}".format(name, str(e))
+                msg = f'{name} could not establish rypc command connection: {e}'
                 self.logger.debug(msg)
                 raise Exception(msg)
 
@@ -241,7 +239,7 @@ class ByteBlowerHandler(TrafficHandler):
             try:
                 outp = ep_cmd.run_command(cmd)
             except Exception as e:
-                msg = "{} had issue running rpyc command {}: {}".format(name, cmd, str(e))
+                msg = f'{name} had issue running rpyc command {cmd}: {e}'
                 self.logger.debug(msg)
                 raise Exception(msg)
             else:
@@ -249,13 +247,13 @@ class ByteBlowerHandler(TrafficHandler):
                     disconnected_eps.append((name, ep_ip))
             finally:
                 ep_cmd.conn.close()
-                self.logger.debug("{} command connection closed".format(name))
+                self.logger.debug(f'{name} command connection closed')
 
 
         if disconnected_eps:
-            raise Exception("The following endpoints are disconnected from wifi: {}".format(str(disconnected_eps)))
+            raise Exception(f'The following endpoints are disconnected from wifi: {disconnected_eps}')
 
-        return "All Endpoints Connected to Wifi"
+        return 'All Endpoints Connected to Wifi'
 
 
 def get_intended_tx(bbl_config_file_name):
@@ -291,4 +289,3 @@ def get_intended_tx(bbl_config_file_name):
             bb_ports_intended_tx[bb_port] += int(intended_mbps)
 
     return bb_ports_intended_tx
-

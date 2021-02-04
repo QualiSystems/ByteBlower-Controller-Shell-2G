@@ -3,12 +3,11 @@ from os import path
 import time
 import pytest
 
-from cloudshell.api.cloudshell_api import AttributeNameValue, InputNameValue
-from cloudshell.traffic.tg_helper import set_family_attribute
-from cloudshell.traffic.tg import BYTEBLOWER_CONTROLLER_MODEL
-from cloudshell.traffic.common import add_resources_to_reservation, get_reservation_id, get_resources_from_reservation
-from shellfoundry.releasetools.test_helper import (create_session_from_deployment, create_init_command_context,
-                                                   create_service_command_context, end_reservation)
+from cloudshell.api.cloudshell_api import AttributeNameValue, InputNameValue, CloudShellAPISession
+from cloudshell.shell.core.driver_context import ResourceCommandContext
+from cloudshell.traffic.helpers import set_family_attribute, get_reservation_id, get_resources_from_reservation
+from cloudshell.traffic.tg import BYTEBLOWER_CONTROLLER_MODEL, BYTEBLOWER_CHASSIS_MODEL
+from shellfoundry_traffic.test_helpers import create_session_from_config, TestHelpers
 
 from src.byteblower_driver import ByteBlowerControllerShell2GDriver
 
@@ -25,57 +24,47 @@ ports = {'test_config':
               'BB/Module3/PC1X2G', 'BB/Module3/PC2X5G', 'BB/Module3/PC3X2G', 'BB/Module3/PC4X5G']}
 
 ep_clt = 'C:/ByteBlowerWirelessEndpoint/$PLUGINSDIR/BBWEP/byteblower-wireless-endpoint.exe'
+client_install_path = 'C:/Program Files (x86)/Excentis/ByteBlower-CLT-v2/ByteBlower-CLT.exe'
+endpoint_install_path = 'C:/ByteBlowerWirelessEndpoint/$PLUGINSDIR/BBWEP/byteblower-wireless-endpoint.exe'
+alias = 'ByteBlower Controller'
 
 
 @pytest.fixture()
-def model():
-    yield BYTEBLOWER_CONTROLLER_MODEL
-
-
-@pytest.fixture()
-def alias():
-    yield 'ByteBlower Controller'
-
-
-@pytest.fixture()
-def server():
-    yield ['10.113.137.22', '192.168.0.3']
-
-
-@pytest.fixture()
-def client_install_path():
-    yield 'C:/Program Files (x86)/Excentis/ByteBlower-CLT-v2/ByteBlower-CLT.exe'
-
-
-@pytest.fixture()
-def endpoint_install_path():
-    yield 'C:/ByteBlowerWirelessEndpoint/$PLUGINSDIR/BBWEP/byteblower-wireless-endpoint.exe'
+def server() -> list:
+    return ['10.113.137.22', '192.168.0.3']
 
 
 # @pytest.fixture(params=[('test_config', 'test_config')],
 #                 ids=['test_config'])
 @pytest.fixture(params=[('test_config_4_cpes', 'test_config_4_cpes')],
                 ids=['test_config_4_cpes'])
-def configuration(request):
+def configuration(request) -> list:
     config_file = path.join(path.dirname(__file__), request.param[0]) + '.bbp'
     scenario = request.param[1]
-    yield [config_file.replace('\\', '/'), scenario]
+    return [config_file.replace('\\', '/'), scenario]
+
+
+@pytest.fixture(scope='session')
+def session() -> CloudShellAPISession:
+    yield create_session_from_config()
 
 
 @pytest.fixture()
-def session():
-    yield create_session_from_deployment()
+def test_helpers(session: CloudShellAPISession) -> TestHelpers:
+    test_helpers = TestHelpers(session)
+    test_helpers.create_reservation()
+    yield test_helpers
+    test_helpers.end_reservation()
 
 
 @pytest.fixture()
-def driver(session, model, server, client_install_path, endpoint_install_path):
+def driver(test_helpers: TestHelpers, server: list) -> ByteBlowerControllerShell2GDriver:
     address, meeting_point = server
-    attributes = {model + '.Address': address,
-                  model + '.Meeting Point': meeting_point,
-                  model + '.Client Install Path': client_install_path,
-                  model + '.Endpoint Install Path': endpoint_install_path}
-    init_context = create_init_command_context(session, 'CS_TrafficGeneratorController', model, 'na', attributes,
-                                               'Service')
+    attributes = {f'{BYTEBLOWER_CONTROLLER_MODEL}.Address': address,
+                  f'{BYTEBLOWER_CONTROLLER_MODEL}.Meeting Point': meeting_point,
+                  f'{BYTEBLOWER_CONTROLLER_MODEL}.Client Install Path': client_install_path,
+                  f'{BYTEBLOWER_CONTROLLER_MODEL}.Endpoint Install Path': endpoint_install_path}
+    init_context = test_helpers.service_init_command_context(BYTEBLOWER_CONTROLLER_MODEL, attributes)
     driver = ByteBlowerControllerShell2GDriver()
     driver.initialize(init_context)
     print(driver.logger.handlers[0].baseFilename)
@@ -84,32 +73,33 @@ def driver(session, model, server, client_install_path, endpoint_install_path):
 
 
 @pytest.fixture()
-def context(session, model, alias, server, client_install_path, configuration, endpoint_install_path):
+def context(session: CloudShellAPISession, test_helpers: TestHelpers, server: list,
+            configuration: list) -> ResourceCommandContext:
     address, meeting_point = server
-    attributes = [AttributeNameValue(model + '.Address', address),
-                  AttributeNameValue(model + '.Meeting Point', meeting_point),
-                  AttributeNameValue(model + '.Client Install Path', client_install_path),
-                  AttributeNameValue(model + '.Endpoint Install Path', endpoint_install_path)]
-    context = create_service_command_context(session, model, alias, attributes)
-    add_resources_to_reservation(context, *ports[configuration[0].split('/')[-1].split('.')[0]])
+    attributes = [AttributeNameValue(f'{BYTEBLOWER_CONTROLLER_MODEL}.Address', address),
+                  AttributeNameValue(f'{BYTEBLOWER_CONTROLLER_MODEL}.Meeting Point', meeting_point),
+                  AttributeNameValue(f'{BYTEBLOWER_CONTROLLER_MODEL}.Client Install Path', client_install_path),
+                  AttributeNameValue(f'{BYTEBLOWER_CONTROLLER_MODEL}.Endpoint Install Path', endpoint_install_path)]
+    session.AddServiceToReservation(test_helpers.reservation_id, BYTEBLOWER_CONTROLLER_MODEL, alias, attributes)
+    context = test_helpers.resource_command_context(service_name=alias)
+    session.AddResourcesToReservation(test_helpers.reservation_id, ports[configuration[1]])
     reservation_ports = get_resources_from_reservation(context,
-                                                       'ByteBlower Chassis Shell 2G.GenericTrafficGeneratorPort')
+                                                       f'{BYTEBLOWER_CHASSIS_MODEL}.GenericTrafficGeneratorPort')
     wan_port = [p for p in reservation_ports if 'nontrunk' in p.Name][0]
     set_family_attribute(context, wan_port.Name, 'Logical Name', 'WAN_PORT')
     for i, port in enumerate([p for p in reservation_ports if 'nontrunk' not in p.Name]):
         set_family_attribute(context, port.Name, 'Logical Name', ports_logical_names[i])
-    reservation_eps = get_resources_from_reservation(context,
-                                                     'ByteBlower Chassis Shell 2G.ByteBlowerEndPoint')
+    reservation_eps = get_resources_from_reservation(context, f'{BYTEBLOWER_CHASSIS_MODEL}.ByteBlowerEndPoint')
     for i, ep in enumerate(reservation_eps):
         set_family_attribute(context, ep.Name, 'Logical Name', eps_logical_names[i])
         set_family_attribute(context, ep.Name, 'SSID', eps_ssids[i])
     yield context
-    end_reservation(session, get_reservation_id(context))
 
 
-class TestByteBlowerControllerDriver(object):
+class TestByteBlowerControllerDriver:
 
-    def test_load_config(self, driver, context, configuration):
+    def test_load_config(self, driver: ByteBlowerControllerShell2GDriver, context: ResourceCommandContext,
+                         configuration: list) -> None:
         driver.load_config(context, *configuration)
 
     def test_load_invalid_config(self, driver, context, configuration):
@@ -131,12 +121,13 @@ class TestByteBlowerControllerDriver(object):
                 status = driver.get_test_status(context)
             driver.stop_traffic(context)
             output = driver.get_statistics(context, None, None)
-            print('output folder = {}'.format(output))
+            print(f'output folder = {output}')
 
 
-class TestByteBlowerControllerShell(object):
+class TestByteBlowerControllerShell:
 
-    def test_load_config(self, session, context, alias, configuration):
+    def test_load_config(self, session: CloudShellAPISession, context: ResourceCommandContext,
+                         configuration: list) -> None:
         session.ExecuteCommand(get_reservation_id(context), alias, 'Service',
                                'load_config',
                                [InputNameValue('config_file_location', configuration[0]),
