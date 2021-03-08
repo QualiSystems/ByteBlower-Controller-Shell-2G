@@ -1,5 +1,5 @@
 
-from cloudshell.traffic.tg import TgControllerDriver
+from cloudshell.traffic.tg import TgControllerDriver, enqueue_keep_alive
 
 from byteblower_handler import ByteBlowerHandler
 
@@ -10,7 +10,8 @@ class ByteBlowerControllerShell2GDriver(TgControllerDriver):
         self.handler = ByteBlowerHandler()
 
     def load_config(self, context, config_file_location, scenario):
-        super().load_config(context, config_file_location)
+        enqueue_keep_alive(context)
+        self.handler.load_config(context, config_file_location, scenario)
 
     def start_traffic(self, context, blocking):
         """ Start traffic on all ports.

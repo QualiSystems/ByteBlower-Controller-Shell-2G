@@ -49,10 +49,10 @@ class ServerThread(threading.Thread):
         with io.open(clt_logger, 'wb') as writer, io.open(clt_logger, 'rb', 1) as reader:
             self.popen = subprocess.Popen(server_cmd, stdout=writer, stderr=writer, universal_newlines=True)
             while self.popen.poll() is None:
-                output = reader.read()
+                output = reader.read().decode("utf-8")
                 self._parse_output(output)
                 self.finished.wait(self.interval)
-            output = reader.read()
+            output = reader.read().decode("utf-8")
             self._parse_output(output)
         self.popen.wait()
 
@@ -119,7 +119,7 @@ class EpThread(threading.Thread):
         self.popen = self.rpyc.modules.subprocess.Popen(ep_cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         while not self.finished.isSet():
             self.finished.wait(self.interval)
-            raw_status = self.popen.stdout.readline().strip()
+            raw_status = self.popen.stdout.readline().decode("utf-8").strip()
             self.logger.debug(f'EP {self.name} raw: {raw_status}')
             status = raw_status if raw_status.startswith('Status:') else None
             if status:
@@ -138,6 +138,7 @@ class EpCmd(object):
         self._get_connection()
 
     def _get_connection(self):
+
         self.conn = rpyc.classic.connect(self.ip)
         self.logger.info(f'EP {self.name} Command Connection Initiated')
 
@@ -148,6 +149,6 @@ class EpCmd(object):
         :return:
         """
         self.logger.debug(f'EP {self.name} command: {ep_cmd}')
-        outp = self.conn.modules.subprocess.check_output(ep_cmd)
+        outp = self.conn.modules.subprocess.check_output(ep_cmd).decode("utf-8")
         self.logger.debug(f'EP {self.name} command: {ep_cmd}, returned with output: {outp}')
         return outp

@@ -1,6 +1,9 @@
-
-from os import path
+"""
+Tests for ByteBlowerControllerShell2GDriver.
+"""
 import time
+from pathlib import Path
+
 import pytest
 
 from cloudshell.api.cloudshell_api import AttributeNameValue, InputNameValue, CloudShellAPISession
@@ -12,21 +15,22 @@ from shellfoundry_traffic.test_helpers import create_session_from_config, TestHe
 from src.byteblower_driver import ByteBlowerControllerShell2GDriver
 
 eps_logical_names = ['EP01_2G', 'EP02_5G', 'EP03_2G', 'EP04_5G']
-eps_ssids = ['MV2-HW11-2.4GHz', 'MV2-HW11-2.4GHz', 'MV2-HW11-2.4GHz', 'MV2-HW11-2.4GHz']
+eps_ssids = ['Mv2Automation2G', 'Mv2Automation5G', 'Mv2Automation2G', 'Mv2Automation5G']
 ports_logical_names = ['PORT_A', 'PORT_B', 'PORT_C', 'PORT_D']
 
-ports = {'test_config':
-             ['BB/Module1/nontrunk-1', 'BB/Module2/trunk-1-45',
-              'BB/Module3/PC1X2G'],
-         'test_config_4_cpes':
-             ['BB/Module1/nontrunk-1',
-              'BB/Module2/trunk-1-45', 'BB/Module2/trunk-1-46', 'BB/Module2/trunk-1-47', 'BB/Module2/trunk-1-48',
-              'BB/Module3/PC1X2G', 'BB/Module3/PC2X5G', 'BB/Module3/PC3X2G', 'BB/Module3/PC4X5G']}
+ports = {'test_config': ['BB1/Module1/nontrunk-1',
+                         'BB1/Module2/trunk-1-13',
+                         'BB1/Module3/VADER01'],
+         'test_config_4_cpes': [
+             'BB1/Module1/nontrunk-1',
+             'BB1/Module2/trunk-1-13', 'BB1/Module2/trunk-1-14', 'BB1/Module2/trunk-1-15', 'BB1/Module2/trunk-1-16',
+             'BB1/Module3/VADER01', 'BB1/Module3/VADER02', 'BB1/Module3/VADER03', 'BB1/Module3/VADER04']}
 
 ep_clt = 'C:/ByteBlowerWirelessEndpoint/$PLUGINSDIR/BBWEP/byteblower-wireless-endpoint.exe'
 client_install_path = 'C:/Program Files (x86)/Excentis/ByteBlower-CLT-v2/ByteBlower-CLT.exe'
 endpoint_install_path = 'C:/ByteBlowerWirelessEndpoint/$PLUGINSDIR/BBWEP/byteblower-wireless-endpoint.exe'
-alias = 'ByteBlower Controller'
+
+ALIAS = 'ByteBlower Controller'
 
 
 @pytest.fixture()
@@ -34,14 +38,14 @@ def server() -> list:
     return ['10.113.137.22', '192.168.0.3']
 
 
-# @pytest.fixture(params=[('test_config', 'test_config')],
-#                 ids=['test_config'])
-@pytest.fixture(params=[('test_config_4_cpes', 'test_config_4_cpes')],
-                ids=['test_config_4_cpes'])
+@pytest.fixture(params=[('yoram_magic_1port', 'test_config')],
+                ids=['test_config'])
+# @pytest.fixture(params=[('test_config_4_cpes_12h', 'test_config_4_cpes')],
+#                 ids=['test_config_4_cpes_12h'])
 def configuration(request) -> list:
-    config_file = path.join(path.dirname(__file__), request.param[0]) + '.bbp'
+    config_file = Path(__file__).parent.joinpath(request.param[0] + '.bbp')
     scenario = request.param[1]
-    return [config_file.replace('\\', '/'), scenario]
+    return [config_file.as_posix(), scenario]
 
 
 @pytest.fixture(scope='session')
@@ -80,8 +84,8 @@ def context(session: CloudShellAPISession, test_helpers: TestHelpers, server: li
                   AttributeNameValue(f'{BYTEBLOWER_CONTROLLER_MODEL}.Meeting Point', meeting_point),
                   AttributeNameValue(f'{BYTEBLOWER_CONTROLLER_MODEL}.Client Install Path', client_install_path),
                   AttributeNameValue(f'{BYTEBLOWER_CONTROLLER_MODEL}.Endpoint Install Path', endpoint_install_path)]
-    session.AddServiceToReservation(test_helpers.reservation_id, BYTEBLOWER_CONTROLLER_MODEL, alias, attributes)
-    context = test_helpers.resource_command_context(service_name=alias)
+    session.AddServiceToReservation(test_helpers.reservation_id, BYTEBLOWER_CONTROLLER_MODEL, ALIAS, attributes)
+    context = test_helpers.resource_command_context(service_name=ALIAS)
     session.AddResourcesToReservation(test_helpers.reservation_id, ports[configuration[1]])
     reservation_ports = get_resources_from_reservation(context,
                                                        f'{BYTEBLOWER_CHASSIS_MODEL}.GenericTrafficGeneratorPort')
@@ -128,7 +132,7 @@ class TestByteBlowerControllerShell:
 
     def test_load_config(self, session: CloudShellAPISession, context: ResourceCommandContext,
                          configuration: list) -> None:
-        session.ExecuteCommand(get_reservation_id(context), alias, 'Service',
+        session.ExecuteCommand(get_reservation_id(context), ALIAS, 'Service',
                                'load_config',
                                [InputNameValue('config_file_location', configuration[0]),
                                 InputNameValue('scenario', configuration[1])])

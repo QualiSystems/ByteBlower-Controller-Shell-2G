@@ -6,8 +6,10 @@ import xml.etree.ElementTree as ET
 
 from cloudshell.traffic.helpers import get_resources_from_reservation, get_family_attribute
 from cloudshell.traffic.tg import BYTEBLOWER_CHASSIS_MODEL, TgControllerHandler, is_blocking
+from netaddr import EUI
+from netaddr.core import AddrFormatError
 
-from byteblower.byteblowerll import byteblower
+from byteblowerll import byteblower
 
 from byteblower_threads import ServerThread, EpThread, EpCmd
 from byteblower_data_model import ByteBlower_Controller_Shell_2G
@@ -42,11 +44,13 @@ class ByteBlowerHandler(TgControllerHandler):
                 os.remove(self.project)
 
     def load_config(self, context, bbl_config_file_name, scenario):
+        # check connected state of eps
+        self._validate_endpoint_wifi(context)
 
         project = bbl_config_file_name.replace('\\', '/')
         if not os.path.exists(project):
             raise EnvironmentError(f'Configuration file {self.project} not found')
-        self.project = tempfile.mktemp().replace('\\', '/')
+        self.project = tempfile.mktemp('.bbp', dir='c:/temp/').replace('\\', '/')
         self.scenario = scenario
 
         xml = ET.parse(project)
@@ -71,11 +75,28 @@ class ByteBlowerHandler(TgControllerHandler):
             self.reservation_ports[logical_name] = port
             xml_gui_port = self._find_xml_gui_port(xml_gui_ports, logical_name)
             bb_port_name = port.Name.split('/')[-1]
+
+            try:
+                value = EUI(get_family_attribute(context, port.Name, "Mac Address"))
+            except AddrFormatError:
+                raise Exception(f"Invalid Mac Address value for {port.Name}")
+            xml_entry = xml_gui_port.find('layer2Configuration').find('MacAddress')
+            for mac_byte, xml_byte in zip(str(value).split('-'), xml_entry.findall('bytes')):
+                xml_byte.text = str(int(mac_byte, 16)) if int(mac_byte, 16) <= 127 else str(int(mac_byte, 16) - 256)
+
+            attributes = ['Address', 'Gateway', 'Netmask']
+            entries = ['IpAddress', 'DefaultGateway', 'Netmask']
+            for attribute, entry in zip(attributes, entries):
+                value = get_family_attribute(context, port.Name, attribute)
+                xml_entry = xml_gui_port.find('ipv4Configuration').find(entry)
+                for ip_byte, xml_byte in zip(value.split('.'), xml_entry.findall('bytes')):
+                    xml_byte.text = ip_byte if int(ip_byte) <= 127 else str(int(ip_byte) - 256)
+
+            trigger = server.PortCreate(bb_port_name).RxTriggerBasicAdd()
             if xml_gui_port.find('ByteBlowerGuiPortConfiguration').attrib['physicalPortId'] != '-1':
                 identifier = int(bb_port_name.split('-')[-1]) - 1
                 xml_gui_port.find('ByteBlowerGuiPortConfiguration').attrib['physicalPortId'] = str(identifier)
-            trigger = server.PortCreate(bb_port_name).RxTriggerBasicAdd()
-            if xml_gui_port.find('ByteBlowerGuiPortConfiguration').attrib['physicalPortId'] == '-1':
+            else:
                 ip = ''
                 xml_wan_ip = xml_gui_port.find('ipv4Configuration').find('IpAddress')
                 for xml_byte in xml_wan_ip.findall('bytes'):
@@ -102,7 +123,7 @@ class ByteBlowerHandler(TgControllerHandler):
                 np_f.seek(0)
                 np_f.writelines(new_project_lines)
 
-        self.intended_tx = get_intended_tx(project)
+        self.intended_tx = get_intended_tx(self.project)
 
     def start_traffic(self, context, blocking):
         # check connected state of eps
@@ -267,7 +288,7 @@ def get_intended_tx(bbl_config_file_name):
     bb_ports = {}
     for xml_gui_port in xml_gui_ports:
         try:
-            int(xml_gui_port.find('ByteBlowerGuiPortConfiguration').attrib['physicalInterfaceId'])
+            # int(xml_gui_port.find('ByteBlowerGuiPortConfiguration').attrib['physicalInterfaceId'])
             bb_port = xml_gui_port.attrib['name']
             bb_ports[bb_port] = {}
             for bb_flow in xml_gui_port.attrib['theSourceOfFlow'].split():
