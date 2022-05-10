@@ -41,7 +41,7 @@ class ByteBlowerControllerShell2GDriver(TgControllerDriver):
         return super().get_statistics(context, view_name, output_type)
 
     def endpoint_health_check(self, context):
-        """ Get real time statistics for all ports and endpoints. """
+        """Verify all EndPoints are up and running."""
         return self.handler._validate_endpoint_wifi(context)
 
     #

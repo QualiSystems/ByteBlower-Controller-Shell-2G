@@ -219,7 +219,7 @@ class ByteBlowerHandler(TgControllerHandler):
             try:
                 ep_cmd = EpCmd(self.logger, ep_ip, name)
             except Exception as e:
-                msg = f'{name} could not establish rypc command connection: {e}'
+                msg = f'{name} could not establish RPyC command connection: {e}'
                 self.logger.debug(msg)
                 raise Exception(msg)
 
@@ -232,12 +232,11 @@ class ByteBlowerHandler(TgControllerHandler):
                 self.logger.debug(msg)
                 raise Exception(msg)
             else:
-                if  'disconnected' in outp:
+                if 'disconnected' in outp:
                     disconnected_eps.append((name, ep_ip))
             finally:
                 ep_cmd.conn.close()
                 self.logger.debug(f'{name} command connection closed')
-
 
         if disconnected_eps:
             raise Exception(f'The following endpoints are disconnected from wifi: {disconnected_eps}')

@@ -36,5 +36,7 @@
             </Parameters>
         </Command>
 
+        <Command Description="Verify all EndPoints are up and running" DisplayName="Verify EndPoints" Name="endpoint_health_check" />
+
     </Layout>
 </Driver>

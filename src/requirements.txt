@@ -4,6 +4,6 @@ rpyc==4.1.2
 cloudshell-logging==1.0.3
 cloudshell-orch-core>=3.3.0.0,<3.4.0.0
 cloudshell-shell-core>=5.0.3,<6.0.0
-cloudshell-traffic>=3.2.4,<3.3.0
+cloudshell-traffic>=3.3.0,<3.4.0
 
-byteblower==2.12.4
+byteblower==2.14.2

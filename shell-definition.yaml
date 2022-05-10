@@ -6,7 +6,7 @@ metadata:
   template_author: Quali
   template_icon: shell-icon.png
   template_name: ByteBlower Controller Shell 2G
-  template_version: 2.1.0
+  template_version: 3.0.0
 node_types:
   vendor.resource.ByteBlower Controller Shell 2G:
     derived_from: cloudshell.nodes.TrafficGeneratorController

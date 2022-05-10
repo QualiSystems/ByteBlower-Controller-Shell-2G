@@ -1,6 +1,10 @@
 -r src/requirements.txt
 
 pytest
-PyYAML
+
+# Pipeline
+pre-commit
+pylint
+pylint_pytest
 
 shellfoundry_traffic

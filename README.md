@@ -1,13 +1,18 @@
 
 ![](https://github.com/QualiSystems/cloudshell-shells-documentaion-templates/blob/master/cloudshell_logo.png)
 
-# **Ixia IxNetwork Controller 2G Shell**  
+# **ByteBlower Controller 2G Shell**  
 
-Release date: June 2019
+Release date: May 2022
 
-Shell version: 2.0.2
+Shell version: 3.0.0
 
-Document version: 1.0
+Document version: 1.2.3
+
+# Important Note
+
+You must copy the offline requirement - `byteblower-2.14.2-cp37-cp37m-win32.whl` - from the `offline_requirements` folder to your local PyPi server.
+See [Updating Python Dependencies for Shells](#updating-python-dependencies-for-shells).
 
 # In This Guide
 
@@ -16,7 +21,6 @@ Document version: 1.0
 * [Importing and Configuring the Shell](#importing-and-configuring-the-shell)
 * [Updating Python Dependencies for Shells](#updating-python-dependencies-for-shells)
 * [Associating a CloudShell Service to a Non-Global Domain](#associating-a-cloudshell-service-to-a-non-global-domain)
-* [Typical Workflow](#typical-workflow)
 * [References](#references)
 * [Release Notes](#release-notes)
 
@@ -29,67 +33,61 @@ CloudShell's traffic generator shells enable you to conduct traffic test activit
 
 For additional information on traffic generator shell architecture, and setting up and using a traffic generator in CloudShell, see the [Traffic Generators Overview](http://help.quali.com/Online%20Help/9.0/Portal/Content/CSP/LAB-MNG/Trffc-Gens.htm?Highlight=traffic%20generator%20overview) online help topic.
 
-### **Ixia IxNetwork Controller 2G Shell**
-The **Ixia IxNetwork Controller 2G** shell provides you with connectivity and management capabilities such as device structure discovery and power management for the **Ixia IxNetwork Controller**. 
+### **ByteBlower Controller 2G Shell**
+The **ByteBlower Controller 2G** shell provides you with connectivity and management capabilities such as device structure discovery and power management for the **ByteBlower Controller**. 
 
-For more information on the **Ixia IxNetwork Controller**, see the official **Ixia** product documentation.
+For more information on the **ByteBlower Controller**, see the official **Excentis** product documentation.
 
-The **Ixia IxNetwork Controller** provides automation commands to run on the chassis, such as Load Configuration, Start/Stop Traffic, Get Statistics. For more information on the Ixia Chassis shell, see the following:
+The **ByteBlower Controller** provides automation commands to run on the chassis, such as Load Configuration, Start/Stop Traffic, Get Statistics. For more information on the ByteBlower Chassis shell, see the following:
 
-* [Ixia Chassis 2G Shell](https://community.quali.com/repos/3440/ixia-chassis-2-gen-shell)
+* [ByteBlower Chassis 2G Shell](https://community.quali.com/repos/3440/byteblower-chassis-2-gen-shell)
 
 
 ### Standard version
-The **Ixia IxNetwork Controller 2G** shell is based on the Traffic Generator Controller Standard version 2.0.0.
+The **ByteBlower Controller 2G** shell is based on the Traffic Generator Controller Standard version 2.0.0.
 
 For detailed information about the shell’s structure and attributes, see the [Traffic Shell standard](https://github.com/QualiSystems/shell-traffic-standard/blob/master/spec/traffic_standard.md) in GitHub.
 
-The **Client Install Path** attribute is not relevant for the Ixia IxNetwork Controller.
+The **Client Install Path** attribute is not relevant for the ByteBlower Controller.
 
 ### Supported OS
 ▪ Windows
 
 ### Requirements
 
-Release: **Ixia IxNetwork Controller 2G**
+▪ CloudShell version **v2021.2.0 and up**
 
-▪ IxNetwork API Server: 8.0.1 GA and above
-
-▪ IxNetwork Connection Manager (Windows and Linux): 8.40 EA and above 
-
-▪ CloudShell version: 8.3 GA Patch 3, 9.0 Patch 2, 9.1 GA and above
+**Note:** If your CloudShell version does not support this shell, you should consider upgrading to a later version of CloudShell or contact customer support.
 
 ### Automation
 This section describes the automation (driver) associated with the data model. The shell’s driver is provided as part of the shell package. There are two types of automation processes, Autoload and Resource.  Autoload is executed when creating the resource in the **Inventory** dashboard, while resource commands are run in the sandbox.
 
 For Traffic Generator shells, commands are configured and executed from the controller service in the sandbox, with the exception of the Autoload command, which is executed when creating the resource.
 
-|Command|Description|
-|:-----|:-----|
-|Autoload|Discovers the chassis, its hierarchy and attributes when creating the resource. The command can be rerun in the **Inventory** dashboard and not in the sandbox, as for other commands.|
-|Load Configuration|Loads configuration and reserves ports.<br>Set the command input as follows:<br>* **Ixia config file name** (config_file_location (String)): Full path to the Ixia configuration file name.|
-|Start ARP/ND|Send ARP/ND for all protocols.|
-|Start Protocols|Starts all protocols.|
-|Stop Protocols|Stops all protocols.|
-|Start Traffic|Starts L2-3 traffic.<br>Possible values:<br>* **Blocking**:<br>  - **True**: Returns after traffic finishes to run<br>  - **False**: Returns immediately|
-|Stop Traffic|Stops L2-L3 traffic.|
-|Get Statistics|Gets view statistics.<br>Possible values:<br>* **View Name**: **Port statistics**, **Traffic item statistics**, **Flow statistics**, etc.<br>* **Output type**: **CSV**, **JSON**. If **CSV**, the statistics will be attached to the blueprint csv file.|
-|Run Quick Test|Runs Quick test.<br>Set the command inputs as follows:<br>* **QuickTest Name**: Name of quick test to run.|
+| Command                 | Description                                                                                                                                                                                                           |
+|:------------------------|:----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| Load Configuration      | Loads configuration and reserves ports.<br>Set the command input as follows:<br>* **Configuration File Location** (String): Full path to the configuration file name.<br>* **Scenario name** (string): Scenario name. |
+| Verify EndPoints | Verify all EndPoints are up and running.                                                                                                                                                      |
+| Start Traffic           | Start traffic on all ports.<br>Set the command input as follows:<br>* **Blocking** (boolean):<br>  - **True**: Returns after traffic finishes to run<br>  - **False**: Returns immediately                            |
+| Stop Traffic            | Stop traffic on all ports.                                                                                                                                                                                            |
+| Get Statistics          | Get post test statistics as sandbox attachment.<br>Set the command input as follows:<br>**Output Type** (enum): **CSV** or **JSON**. If **CSV**, the statistics will be attached to the blueprint csv file.           |
+| Get Realtime Statistics | Get real time statistics.                                                                                                                                                                                             |
+| Get Test Status | Get test status - **not started**, **started**, or **finished**.                                                                                                                                                      |
 
 # Downloading the Shell
-The **Ixia IxNetwork Controller 2G** shell is available from the [Quali Community Integrations](https://community.quali.com/integrations) page. 
+The **ByteBlower Controller 2G** shell is available from the [Quali Community Integrations](https://community.quali.com/integrations) page. 
 
 Download the files into a temporary location on your local machine. 
 
 The shell comprises:
 
-|File name|Description|
-|:---|:---|
-|IxiaIxnetworkControllerShell2G.zip|IxNetwork Controller 2G shell package|
-|ixia_ixnetwork_controller_gen_2_offline_requirements.zip|Shell Python dependencies (for offline deployments only)|
+| File name                                                | Description                                              |
+|:---------------------------------------------------------|:---------------------------------------------------------|
+| ByteBlowerControllerShell2G.zip                          | ByteBlower Controller 2G shell package                   |
+| offline_requirements.zip | Shell Python dependencies (for offline deployments only) |
 
 ## Importing and Configuring the Shell
-This section describes how to import the Ixia IxNetwork Controller 2G shell and configure and modify the shell’s devices. 
+This section describes how to import the ByteBlower Controller 2G shell and configure and modify the shell’s devices. 
 
 ### Importing the shell into CloudShell
 
@@ -134,7 +132,7 @@ For more information, see [Configuring CloudShell to Execute Python Commands in 
 Before PyPi Server was introduced as CloudShell’s python package management mechanism, the `PythonOfflineRepositoryPath` key was used to set the default offline package repository on the Quali Server machine, and could be used on specific Execution Server machines to set a different folder. 
 
 **To set the offline python repository:**
-1. Download the *ixia_ixnetwork_controller_gen_2_offline_requirements.zip* file, see [Downloading the Shell](#downloading-the-shell).
+1. Download the *offline_requirements.zip* file, see [Downloading the Shell](#downloading-the-shell).
 
 2. Unzip it to a local repository. Make sure the execution server has access to this folder. 
 
@@ -172,7 +170,7 @@ In order to expose a service to users of a domain that is not the Global domain,
 
 When you import a service shell, most shells are automatically assigned a default service category which is associated with the Global domain. For custom shells, this may not be true.
 
-**To associate the Ixia IxNetwork Controller 2G service to a domain:**
+**To associate the ByteBlower Controller 2G service to a domain:**
 
 **Note:** The association process differs depending on the type of shell - second generation (2G) shell or first generation (1G) shell. The instructions below detail the steps for a 2G service shell.
 
@@ -193,40 +191,6 @@ When you import a service shell, most shells are automatically assigned a defaul
 	
 	5. Click **Save**.
 
-# Typical Workflow 
-
-**Workflow 1** - *Using the IxNetwork controller to run IxNetwork traffic* 
-
-1. In CloudShell Portal, in the top left section of the **Blueprint Catalog**, click **+ Create Blueprint**.
-
-2. In the blueprint toolbar, click **Resource** and drag the Ixia Chassis resource into the diagram.
-
-	1. Add the required number of Ixia Chassis resource ports to the blueprint. The number of Ixia Chassis resource ports in the blueprint should match the number of ports in the IxNetwork configuration. 
-	For example: if you have a configuration with two ports:
-	
-		&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;![](https://github.com/QualiSystems/Ixia-IxNetwork-Controller-Shell-2G/blob/master/ixnetwork_controller_configuration_two_ports.png)
-
-	2. Hover over the Ixia Chassis resource and select **More Options>Add sub-resource** from the context menu. 
-	3. Use the search and filtering options to find the port resources you want to use.
-	4. Select the port resources from the pane and drag them into the workspace. The ports are displayed in the **Resource Structure** tab of the chassis resource.
-	
-		&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;![](https://github.com/QualiSystems/Ixia-IxNetwork-Controller-Shell-2G/blob/master/ixnetwork_controller_blueprint_two_ports.png)
-
-3. In the blueprint toolbar, click **App/Service>CS_TrafficGeneratorController** and drag the **Ixia IxNetwork Controller Shell 2G** service into the diagram.
-
-4. Reserve the blueprint.
-
-5. Edit the **Ixia IxNetwork Controller Shell 2G** service parameters if required.
-
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;![](https://github.com/QualiSystems/Ixia-IxNetwork-Controller-Shell-2G/blob/master/ixnetwork_controller_configuration_parameters.png)
-
-6. Map the configuration ports to the blueprint ports. For each port in the IxNetwork configuration, assign a physical port from the ports in the blueprint. 
-	1. Hover over the Ixia chassis resource and select **Structure** from the context menu. The **Resource Structure** side pane is displayed, listing the resource's ports.
-	2. For each port, click the down arrow and select **Attributes**.
-	3. Set the **Logical Name** to the port name in the IxNetwork configuration.
-
-	&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;![](https://github.com/QualiSystems/Ixia-IxNetwork-Controller-Shell-2G/blob/master/ixnetwork_controller_mapping_ports.png)
-
 # References
 To download and share integrations, see [Quali Community's Integrations](https://community.quali.com/integrations). 
 
@@ -238,7 +202,7 @@ To connect with Quali users and experts from around the world, ask questions and
 
 # Release Notes 
 
-For release updates, see the shell's [GitHub releases page](https://github.com/QualiSystems/Ixia-IxNetwork-Controller-Shell-2G/releases).
+For release updates, see the shell's [GitHub releases page](https://github.com/QualiSystems/ByteBlower-Controller-Shell-2G/releases).
 
 ### Known Issues
 • **Performance**: REST API performance is very poor. Loading a configuration and reserving ports may take a number of seconds, depending on your particular setup. You are advised to start idle connections on the Connection Manager to reduce startup time.
