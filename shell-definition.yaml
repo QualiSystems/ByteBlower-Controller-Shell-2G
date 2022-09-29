@@ -1,12 +1,16 @@
-description: 'TOSCA based ByteBlower Controller shell'
+description: TOSCA based ByteBlower Controller shell
+
+tosca_definitions_version: tosca_simple_yaml_1_0
 
 imports:
 - cloudshell_standard: cloudshell_traffic_generator_controller_standard_2_0_0.yaml
+
 metadata:
   template_author: Quali
   template_icon: shell-icon.png
   template_name: ByteBlower Controller Shell 2G
-  template_version: 3.0.0
+  template_version: 3.1.0
+
 node_types:
   vendor.resource.ByteBlower Controller Shell 2G:
     derived_from: cloudshell.nodes.TrafficGeneratorController
@@ -31,4 +35,3 @@ node_types:
         type: string
         tags:
         - user_input
-tosca_definitions_version: tosca_simple_yaml_1_0

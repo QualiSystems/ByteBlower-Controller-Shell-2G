@@ -14,6 +14,11 @@ Document version: 1.2.3
 You must copy the offline requirement - `byteblower-2.14.2-cp37-cp37m-win32.whl` - from the `offline_requirements` folder to your local PyPi server.
 See [Updating Python Dependencies for Shells](#updating-python-dependencies-for-shells).
 
+## Restrictions on BB configuration:
+* Uni-direction traffic not supported.
+* Each flow must have unique frame blasting configuration. 
+
+
 # In This Guide
 
 * [Overview](#overview)

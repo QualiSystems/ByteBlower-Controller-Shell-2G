@@ -1,11 +1,21 @@
+"""
+ByteBlower controller handler.
+"""
+import logging
 import os
 import tempfile
 import time
 import xml.etree.ElementTree as ET
+from ipaddress import AddressValueError, IPv4Address
+from pathlib import Path
+from typing import Dict
 
 from byteblowerll import byteblower
+from byteblowerll.byteblower import TriggerBasicResultHistory
+from cloudshell.api.cloudshell_api import ReservedResourceInfo
+from cloudshell.shell.core.driver_context import InitCommandContext, ResourceCommandContext
 from cloudshell.traffic.helpers import get_family_attribute, get_resources_from_reservation
-from cloudshell.traffic.tg import BYTEBLOWER_CHASSIS_MODEL, TgControllerHandler, is_blocking
+from cloudshell.traffic.tg import BYTEBLOWER_CHASSIS_MODEL, is_blocking
 from netaddr import EUI
 from netaddr.core import AddrFormatError
 
@@ -16,36 +26,42 @@ BYTEBLOWER_PORT_MODEL = BYTEBLOWER_CHASSIS_MODEL + ".GenericTrafficGeneratorPort
 BYTEBLOWER_ENDPOINT_MODEL = BYTEBLOWER_CHASSIS_MODEL + ".ByteBlowerEndPoint"
 
 
-class ByteBlowerHandler(TgControllerHandler):
-    def __init__(self):
-        super().__init__()
+class ByteBlowerError(Exception):
+    """Base exception for ByteBlower exceptions."""
 
+
+class ByteBlowerHandler:
+    """Business logic for all controller shell commands."""
+
+    def __init__(self) -> None:
+        """Initialize object variables, actual initialization is performed in initialize method."""
+        self.logger: logging.Logger = None
+        self.service: ByteBlower_Controller_Shell_2G = None
         self.server_thread = None
-        self.eps_threads = None
-        self.reservation_ports = {}
-        self.reservation_eps = {}
-        self.bb_ports = {}
+        self.eps_threads: Dict[str, EpThread] = {}
+        self.reservation_ports: Dict[str, ReservedResourceInfo] = {}
+        self.reservation_eps: Dict[str, ReservedResourceInfo] = {}
+        self.bb_ports: Dict[str, TriggerBasicResultHistory] = {}
         self.intended_tx = {}
-        self.project = None
+        self.project: Path = None
         self.scenario = None
 
-    def initialize(self, context, logger):
-        service = ByteBlower_Controller_Shell_2G.create_from_context(context)
-        super().initialize(service, logger, service)
+    def initialize(self, context: InitCommandContext, logger: logging.Logger) -> None:
+        """Init ByteBlower."""
+        self.logger = logger
+        self.service = ByteBlower_Controller_Shell_2G.create_from_context(context)
 
-    def cleanup(self):
+    def cleanup(self) -> None:
+        """Stop traffic and remove project."""
         self.stop_traffic()
-        if self.project:
-            if os.path.exists(self.project):
-                os.remove(self.project)
+        if self.project and self.project.exists():
+            os.remove(self.project)
 
-    def load_config(self, context, bbl_config_file_name, scenario):
-        # check connected state of eps
-        self._validate_endpoint_wifi(context)
-
-        project = bbl_config_file_name.replace("\\", "/")
-        if not os.path.exists(project):
-            raise EnvironmentError(f"Configuration file {self.project} not found")
+    def load_config(self, context: ResourceCommandContext, bbl_config_file_name: str, scenario: str) -> None:
+        """Load configuration file, and map and reserve ports."""
+        project = Path(bbl_config_file_name)
+        if not project.exists():
+            raise EnvironmentError(f"Configuration file {project} not found")
         self.project = tempfile.mktemp(".bbp", dir="c:/temp/").replace("\\", "/")
         self.scenario = scenario
 
@@ -64,6 +80,9 @@ class ByteBlowerHandler(TgControllerHandler):
             identifier = get_family_attribute(context, ep.Name, "Identifier")
             xml_gui_port.find("ByteBlowerGuiPortConfiguration").attrib["physicalInterfaceId"] = identifier
 
+        if self.reservation_eps:
+            self.validate_endpoint_wifi(context)
+
         self.reservation_ports = {}
         self.bb_ports = {}
         for port in get_resources_from_reservation(context, BYTEBLOWER_PORT_MODEL):
@@ -72,21 +91,28 @@ class ByteBlowerHandler(TgControllerHandler):
             xml_gui_port = self._find_xml_gui_port(xml_gui_ports, logical_name)
             bb_port_name = port.Name.split("/")[-1]
 
-            try:
-                value = EUI(get_family_attribute(context, port.Name, "Mac Address"))
-            except AddrFormatError:
-                raise Exception(f"Invalid Mac Address value for {port.Name}")
-            xml_entry = xml_gui_port.find("layer2Configuration").find("MacAddress")
-            for mac_byte, xml_byte in zip(str(value).split("-"), xml_entry.findall("bytes")):
-                xml_byte.text = str(int(mac_byte, 16)) if int(mac_byte, 16) <= 127 else str(int(mac_byte, 16) - 256)
+            value = get_family_attribute(context, port.Name, "Mac Address")
+            if value:
+                try:
+                    eui_value = str(EUI(value))
+                except AddrFormatError as err:
+                    raise ByteBlowerError(f"Invalid Mac Address - {value} - for {port.Name}") from err
+                xml_entry = xml_gui_port.find("layer2Configuration").find("MacAddress")
+                for mac_byte, xml_byte in zip(eui_value.split("-"), xml_entry.findall("bytes")):
+                    xml_byte.text = str(int(mac_byte, 16)) if int(mac_byte, 16) <= 127 else str(int(mac_byte, 16) - 256)
 
             attributes = ["Address", "Gateway", "Netmask"]
             entries = ["IpAddress", "DefaultGateway", "Netmask"]
             for attribute, entry in zip(attributes, entries):
                 value = get_family_attribute(context, port.Name, attribute)
-                xml_entry = xml_gui_port.find("ipv4Configuration").find(entry)
-                for ip_byte, xml_byte in zip(value.split("."), xml_entry.findall("bytes")):
-                    xml_byte.text = ip_byte if int(ip_byte) <= 127 else str(int(ip_byte) - 256)
+                if value:
+                    try:
+                        ipv4_value = str(IPv4Address(value))
+                    except AddressValueError as err:
+                        raise ByteBlowerError(f"Invalid {attribute} - {value} - for {port.Name}") from err
+                    xml_entry = xml_gui_port.find("ipv4Configuration").find(entry)
+                    for ip_byte, xml_byte in zip(ipv4_value.split("."), xml_entry.findall("bytes")):
+                        xml_byte.text = ip_byte if int(ip_byte) <= 127 else str(int(ip_byte) - 256)
 
             trigger = server.PortCreate(bb_port_name).RxTriggerBasicAdd()
             if xml_gui_port.find("ByteBlowerGuiPortConfiguration").attrib["physicalPortId"] != "-1":
@@ -123,7 +149,7 @@ class ByteBlowerHandler(TgControllerHandler):
 
     def start_traffic(self, context, blocking):
         # check connected state of eps
-        self._validate_endpoint_wifi(context)
+        self.validate_endpoint_wifi(context)
 
         log_file_name = self.logger.handlers[0].baseFilename
         self.output = (os.path.splitext(log_file_name)[0] + "--output").replace("\\", "/")
@@ -138,7 +164,7 @@ class ByteBlowerHandler(TgControllerHandler):
             time.sleep(1)
             if not self.eps_threads[name].popen:
                 self.stop_traffic()
-                raise Exception(f"Failed to start thread on EP {name}, IP {ep_ip}")
+                raise ByteBlowerError(f"Failed to start thread on EP {name}, IP {ep_ip}")
 
         # add delay to ensure clients are registered before starting traffic
         time.sleep(8)
@@ -149,18 +175,18 @@ class ByteBlowerHandler(TgControllerHandler):
         time.sleep(1)
         if not self.server_thread.popen:
             self.stop_traffic()
-            raise Exception("Failed to start thread on server")
+            raise ByteBlowerError("Failed to start thread on server")
         while not self.server_thread.traffic_running:
             time.sleep(1)
             if self.server_thread.failed:
                 self.stop_traffic()
-                raise Exception(f"Failed to start traffic - {self.server_thread.failed}")
+                raise ByteBlowerError(f"Failed to start traffic - {self.server_thread.failed}")
 
         if is_blocking(blocking):
             # todo: implement wait test.
             pass
 
-    def stop_traffic(self):
+    def stop_traffic(self) -> None:
         if self.eps_threads:
             for ep_thread in self.eps_threads.values():
                 ep_thread.stop()
@@ -170,16 +196,14 @@ class ByteBlowerHandler(TgControllerHandler):
     def get_test_status(self):
         if not self.server_thread:
             return "Not started"
-        else:
-            if self.server_thread.failed:
-                raise Exception(f"Server Failed: {self.server_thread.failed}")
-            if self.server_thread.traffic_running:
-                return "Running"
-            else:
-                return "Finished"
+        if self.server_thread.failed:
+            raise ByteBlowerError(f"Server Failed: {self.server_thread.failed}")
+        if self.server_thread.traffic_running:
+            return "Running"
+        return "Finished"
 
-    def get_rt_statistics(self, num_samples=1):
-        """
+    def get_rt_statistics(self, num_samples=1) -> Dict[str, list]:
+        """Get real time statistics.
 
         :return: {'name': [[str, int,int]]}
         """
@@ -191,47 +215,45 @@ class ByteBlowerHandler(TgControllerHandler):
             cumulative = bb_port.CumulativeLatestGet()
             interval = bb_port.IntervalLatestGet()
             cumulative_bytes = cumulative.ByteCountGet()
-            cumulative_mb = "{0:.2f}".format(cumulative_bytes * 8 / 1000000.0)
+            cumulative_mb = f"{cumulative_bytes * 8 / 1000000.0:.2f}"
             interval_bytes = interval.ByteCountGet()
-            interval_mb = "{0:.2f}".format(interval_bytes * 8 / 1000000.0)
+            interval_mb = f"{interval_bytes * 8 / 1000000.0:.2f}"
             # intended Tx placeholder of -1 [cumulative, Rx rate, Intended Tx Placeholder]
             rt_stats[name] = [cumulative_mb, interval_mb, self.intended_tx[name]]
             self.logger.debug(f"Port {name} stats: {rt_stats[name]}")
         return rt_stats
 
-    def get_statistics(self, context, view_name, output_type):
+    def get_statistics(self):
         # todo: attach requested output file to reservation.
         return self.output
 
     def _find_xml_gui_port(self, xml_gui_ports, logical_name):
         requested_xml_gui_ports = [p for p in xml_gui_ports if p.attrib["name"] == logical_name]
         if not requested_xml_gui_ports:
-            raise Exception(
-                "Logical name {} not found in configuration ports {}".format(
-                    logical_name, [p.attrib["name"] for p in xml_gui_ports]
-                )
+            raise ByteBlowerError(
+                f"Logical name {logical_name} not found in configuration ports {[p.attrib['name'] for p in xml_gui_ports]}"
             )
         return requested_xml_gui_ports[0]
 
-    def _validate_endpoint_wifi(self, context):
+    def validate_endpoint_wifi(self, context):
         disconnected_eps = []
         for name, ep in self.reservation_eps.items():
             ep_ip = get_family_attribute(context, ep.Name, "Address")
             try:
                 ep_cmd = EpCmd(self.logger, ep_ip, name)
-            except Exception as e:
-                msg = f"{name} could not establish RPyC command connection: {e}"
+            except ByteBlowerError as err:
+                msg = f"{name} could not establish RPyC command connection: {err}"
                 self.logger.debug(msg)
-                raise Exception(msg)
+                raise ByteBlowerError(msg) from err
 
             cmd = ["netsh", "wlan", "show", "interfaces", "|", "findstr", "State"]
 
             try:
                 outp = ep_cmd.run_command(cmd)
-            except Exception as e:
-                msg = f"{name} had issue running rpyc command {cmd}: {e}"
+            except ByteBlowerError as err:
+                msg = f"{name} had issue running rpyc command {cmd}: {err}"
                 self.logger.debug(msg)
-                raise Exception(msg)
+                raise ByteBlowerError(msg) from err
             else:
                 if "disconnected" in outp:
                     disconnected_eps.append((name, ep_ip))
@@ -240,7 +262,7 @@ class ByteBlowerHandler(TgControllerHandler):
                 self.logger.debug(f"{name} command connection closed")
 
         if disconnected_eps:
-            raise Exception(f"The following endpoints are disconnected from wifi: {disconnected_eps}")
+            raise ByteBlowerError(f"The following endpoints are disconnected from wifi: {disconnected_eps}")
 
         return "All Endpoints Connected to Wifi"
 
@@ -250,19 +272,19 @@ class ByteBlowerHandler(TgControllerHandler):
             ep_ip = get_family_attribute(context, ep.Name, "Address")
             try:
                 ep_cmd = EpCmd(self.logger, ep_ip, name)
-            except Exception as e:
-                msg = f"{name} could not establish rypc command connection: {e}"
+            except ByteBlowerError as err:
+                msg = f"{name} could not establish RPYC command connection: {err}"
                 self.logger.debug(msg)
-                raise Exception(msg)
+                raise ByteBlowerError(msg) from err
 
             cmd = ["netsh", "wlan", "show", "interfaces", "|", "findstr", "State"]
 
             try:
                 outp = ep_cmd.run_command(cmd)
-            except Exception as e:
-                msg = f"{name} had issue running rpyc command {cmd}: {e}"
+            except ByteBlowerError as err:
+                msg = f"{name} had issue running rpyc command {cmd}: {err}"
                 self.logger.debug(msg)
-                raise Exception(msg)
+                raise ByteBlowerError(msg) from err
             else:
                 if "disconnected" in outp:
                     disconnected_eps.append((name, ep_ip))
@@ -271,7 +293,7 @@ class ByteBlowerHandler(TgControllerHandler):
                 self.logger.debug(f"{name} command connection closed")
 
         if disconnected_eps:
-            raise Exception(f"The following endpoints are disconnected from wifi: {disconnected_eps}")
+            raise ByteBlowerError(f"The following endpoints are disconnected from wifi: {disconnected_eps}")
 
         return "All Endpoints Connected to Wifi"
 
@@ -287,7 +309,6 @@ def get_intended_tx(bbl_config_file_name):
     bb_ports = {}
     for xml_gui_port in xml_gui_ports:
         try:
-            # int(xml_gui_port.find('ByteBlowerGuiPortConfiguration').attrib['physicalInterfaceId'])
             bb_port = xml_gui_port.attrib["name"]
             bb_ports[bb_port] = {}
             for bb_flow in xml_gui_port.attrib["theSourceOfFlow"].split():

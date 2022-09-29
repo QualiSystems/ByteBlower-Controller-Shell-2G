@@ -1,52 +1,46 @@
 <?xml version="1.0" encoding="ASCII"?>
-<byteblowerguimodel_v1_3:ByteBlowerProject xmi:version="2.0" xmlns:xmi="http://www.omg.org/XMI" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:byteblowerguimodel_v1_3="http:///com.excentis.products.byteblower.gui.model.ecore" name="UDP Portloading Mv2 HW11" author="Azam" modelVersion="2.10.2" defaultBatchInitializationTime="10000000000" warningLossLevel="0.01" errorLossLevel="0.02" reportOutputToHtml="true" reportOutputToExcel="true" reportOutputToCsv="true" reportOutputToJson="false" reportProjectBackup="true" throughputUnit="Mbps" scenarioIdenticalFramesWarning="true" scenarioPauseAfterDhcp="false" scenarioEnableScoutingFrames="false" scenarioIgnoreInitializationErrors="false" scenarioWaitTimeAfterScenario="5000000000" throughputType="FrameOnly" dhcpTimeout="1000000000" numberOfDecimals="0" dhcpRetries="5" latencyRangeStart="0" latencyRangeEnd="100000000" latencyUnit="14" numberOfLatencyDecimals="0" reportOutputToPdf="true" ScenarioHttpAllowAlive="120000000000" scenarioAutomaticTcpRestart="false">
-  <Scenario name="test_config">
+<byteblowerguimodel_v1_3:ByteBlowerProject xmi:version="2.0" xmlns:xmi="http://www.omg.org/XMI" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:byteblowerguimodel_v1_3="http:///com.excentis.products.byteblower.gui.model.ecore" name="trunk_test_config" author="yshamir" modelVersion="2.18.0" defaultBatchInitializationTime="10000000000" warningLossLevel="0.01" errorLossLevel="0.02" reportOutputToHtml="true" reportOutputToExcel="false" reportOutputToCsv="false" reportOutputToJson="false" reportProjectBackup="true" usingHighcharts="true" throughputUnit="Mbps" scenarioIdenticalFramesWarning="true" scenarioPauseAfterDhcp="true" scenarioEnableScoutingFrames="true" scenarioIgnoreInitializationErrors="false" scenarioWaitTimeAfterScenario="5000000000" throughputType="FrameOnly" dhcpTimeout="1000000000" numberOfDecimals="2" dhcpRetries="5" latencyRangeStart="0" latencyRangeEnd="100000000" latencyUnit="14" numberOfLatencyDecimals="3" reportOutputToPdf="false" ScenarioHttpAllowAlive="9223372036854775807" scenarioAutomaticTcpRestart="true" resultsOverTimeEnabled="true">
+  <Scenario name="Frame Size Scenario 1" batchActions="//@Batch.0/@batchActionBlocks.0/@batchActions.0">
     <measurements xsi:type="byteblowerguimodel_v1_3:FlowMeasurement" flow="//@Flow.0">
       <flowStartEvent scheduledTime="0"/>
       <flowStopEvent scheduledTime="10000000000"/>
     </measurements>
-    <measurements xsi:type="byteblowerguimodel_v1_3:FlowMeasurement" flow="//@Flow.1">
-      <flowStartEvent scheduledTime="0"/>
-      <flowStopEvent scheduledTime="10000000000"/>
-    </measurements>
+  </Scenario>
+  <Scenario name="Frame Size Scenario 2" batchActions="//@Batch.0/@batchActionBlocks.0/@batchActions.1">
     <measurements xsi:type="byteblowerguimodel_v1_3:FlowMeasurement" flow="//@Flow.2">
       <flowStartEvent scheduledTime="0"/>
       <flowStopEvent scheduledTime="10000000000"/>
     </measurements>
-    <measurements xsi:type="byteblowerguimodel_v1_3:FlowMeasurement" flow="//@Flow.3">
-      <flowStartEvent scheduledTime="0"/>
-      <flowStopEvent scheduledTime="10000000000"/>
-    </measurements>
   </Scenario>
-  <Flow name="FLOW_1" source="//@ByteBlowerGuiPort.0" destination="//@ByteBlowerGuiPort.1" FlowTemplate="//@FlowTemplate.0" latencyAndJitterType="No" flowMeasurement="//@Scenario.0/@measurements.0" tos="0"/>
-  <Flow name="FLOW_2" source="//@ByteBlowerGuiPort.1" destination="//@ByteBlowerGuiPort.0" FlowTemplate="//@FlowTemplate.1" latencyAndJitterType="No" flowMeasurement="//@Scenario.0/@measurements.1" tos="0"/>
-  <Flow name="FLOW_3" source="//@ByteBlowerGuiPort.0" destination="//@ByteBlowerGuiPort.2" FlowTemplate="//@FlowTemplate.2" latencyAndJitterType="No" flowMeasurement="//@Scenario.0/@measurements.2" tos="0"/>
-  <Flow name="FLOW_4" source="//@ByteBlowerGuiPort.2" destination="//@ByteBlowerGuiPort.0" FlowTemplate="//@FlowTemplate.3" latencyAndJitterType="No" flowMeasurement="//@Scenario.0/@measurements.3" tos="0"/>
-  <FlowTemplate xsi:type="byteblowerguimodel_v1_3:FrameBlastingFlow" name="FRAME_BLASTING_1" Flow="//@Flow.0" frameInterval="60000" dataRateUnit="Mbps">
+  <Batch name="Frame Size Batch 1" startType="Relative">
+    <batchActionBlocks>
+      <batchActions startTime="0" initializationTime="0" scenario="//@Scenario.0"/>
+      <batchActions startTime="0" initializationTime="0" scenario="//@Scenario.1"/>
+    </batchActionBlocks>
+  </Batch>
+  <Flow name="Frame Size Flow 1" source="//@ByteBlowerGuiPort.0" destination="//@ByteBlowerGuiPort.1" FlowTemplate="//@FlowTemplate.2" latencyAndJitterType="No" flowMeasurement="//@Scenario.0/@measurements.0" tos="0"/>
+  <Flow name="Frame Size Flow 2" source="//@ByteBlowerGuiPort.1" destination="//@ByteBlowerGuiPort.0" FlowTemplate="//@FlowTemplate.0" latencyAndJitterType="No" tos="0"/>
+  <Flow name="Frame Size Flow 3" source="//@ByteBlowerGuiPort.0" destination="//@ByteBlowerGuiPort.1" FlowTemplate="//@FlowTemplate.3" latencyAndJitterType="No" flowMeasurement="//@Scenario.1/@measurements.0" tos="0"/>
+  <Flow name="Frame Size Flow 4" source="//@ByteBlowerGuiPort.1" destination="//@ByteBlowerGuiPort.0" FlowTemplate="//@FlowTemplate.1" latencyAndJitterType="No" tos="0"/>
+  <FlowTemplate xsi:type="byteblowerguimodel_v1_3:FrameBlastingFlow" name="Frame Size FlowTemplate 1" Flow="//@Flow.1" frameInterval="10000000" dataRateUnit="Mbps">
     <frameBlastingFrames weight="1" frame="//@Frame.0"/>
   </FlowTemplate>
-  <FlowTemplate xsi:type="byteblowerguimodel_v1_3:FrameBlastingFlow" name="FRAME_BLASTING_2" Flow="//@Flow.1" frameInterval="400000" dataRateUnit="Mbps">
+  <FlowTemplate xsi:type="byteblowerguimodel_v1_3:FrameBlastingFlow" name="Frame Size FlowTemplate 2" Flow="//@Flow.3" frameInterval="10000000" dataRateUnit="Mbps">
     <frameBlastingFrames weight="1" frame="//@Frame.1"/>
   </FlowTemplate>
-  <FlowTemplate xsi:type="byteblowerguimodel_v1_3:FrameBlastingFlow" name="FRAME_BLASTING_3" Flow="//@Flow.2" frameInterval="120000" dataRateUnit="Mbps">
-    <frameBlastingFrames weight="1" frame="//@Frame.2"/>
+  <FlowTemplate xsi:type="byteblowerguimodel_v1_3:FrameBlastingFlow" name="FRAME_BLASTING_1" Flow="//@Flow.0" frameInterval="10000000" dataRateUnit="Mbps">
+    <frameBlastingFrames weight="1" frame="//@Frame.0"/>
   </FlowTemplate>
-  <FlowTemplate xsi:type="byteblowerguimodel_v1_3:FrameBlastingFlow" name="FRAME_BLASTING_4" Flow="//@Flow.3" frameInterval="800000" dataRateUnit="Mbps">
-    <frameBlastingFrames weight="1" frame="//@Frame.3"/>
+  <FlowTemplate xsi:type="byteblowerguimodel_v1_3:FrameBlastingFlow" name="FRAME_BLASTING_2" Flow="//@Flow.2" frameInterval="10000000" dataRateUnit="Mbps">
+    <frameBlastingFrames weight="1" frame="//@Frame.1"/>
   </FlowTemplate>
-  <Frame name="FRAME_1" bytesHexString="0000000000000000000000000800450005CE02780000FE11B0A301010101010101011389138A05BAC1FE457863656E7469732042797465426C6F7765722044656661756C74205061796C6F61642E000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000" L2AutoSourceMac="true" L2AutoDestMac="true" L3AutoSourceIp="true" L3AutoDestIp="true" L3AutoHeaderCheck="true" L3AutoTotLen="true" L3LinkWithL2="true" L4AutoTcpChecksum="false" L4AutoUdpChecksum="true" L4AutoTotLen="true" L4LinkWithL3="true" L3AutoArpSHA="false" L3AutoArpSPA="false" L3AutoArpTHA="false" L3AutoArpTPA="false" L3AutoIpv6Source="false" L3AutoIpv6Destination="false" L3AutoIpv6PayloadLength="false" frameBlastingFrames="//@FlowTemplate.0/@frameBlastingFrames.0" L4AllowPortOverride="true">
+  <Frame name="Frame Size Frame 1" bytesHexString="00000000000000000000000008004500005602780000FE11B61B0101010101010101100010000042D401457863656E7469732042797465426C6F7765722044656661756C74205061796C6F61642E00000000000000000000000000000000000000000000" L2AutoSourceMac="true" L2AutoDestMac="true" L3AutoSourceIp="true" L3AutoDestIp="true" L3AutoHeaderCheck="true" L3AutoTotLen="true" L3LinkWithL2="true" L4AutoTcpChecksum="false" L4AutoUdpChecksum="true" L4AutoTotLen="true" L4LinkWithL3="true" L3AutoArpSHA="false" L3AutoArpSPA="false" L3AutoArpTHA="false" L3AutoArpTPA="false" L3AutoIpv6Source="false" L3AutoIpv6Destination="false" L3AutoIpv6PayloadLength="false" frameBlastingFrames="//@FlowTemplate.0/@frameBlastingFrames.0 //@FlowTemplate.2/@frameBlastingFrames.0" L4AllowPortOverride="true">
     <modifiers xsi:type="byteblowerguimodel_v1_3:UniqueFieldModifier" fieldLength="1" offset="0"/>
   </Frame>
-  <Frame name="FRAME_2" bytesHexString="0000000000000000000000000800450005CE02780000FE11B0A30101010101010101138B138C05BAC1FA457863656E7469732042797465426C6F7765722044656661756C74205061796C6F61642E000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000" L2AutoSourceMac="true" L2AutoDestMac="true" L3AutoSourceIp="true" L3AutoDestIp="true" L3AutoHeaderCheck="true" L3AutoTotLen="true" L3LinkWithL2="true" L4AutoTcpChecksum="false" L4AutoUdpChecksum="true" L4AutoTotLen="true" L4LinkWithL3="true" L3AutoArpSHA="false" L3AutoArpSPA="false" L3AutoArpTHA="false" L3AutoArpTPA="false" L3AutoIpv6Source="false" L3AutoIpv6Destination="false" L3AutoIpv6PayloadLength="false" frameBlastingFrames="//@FlowTemplate.1/@frameBlastingFrames.0" L4AllowPortOverride="true">
+  <Frame name="Frame Size Frame 2" bytesHexString="0000000000000000000000000800450000BA02780000FE11B5B701010101010101011000100000A6D339457863656E7469732042797465426C6F7765722044656661756C74205061796C6F61642E0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000" L2AutoSourceMac="true" L2AutoDestMac="true" L3AutoSourceIp="true" L3AutoDestIp="true" L3AutoHeaderCheck="true" L3AutoTotLen="true" L3LinkWithL2="true" L4AutoTcpChecksum="false" L4AutoUdpChecksum="true" L4AutoTotLen="true" L4LinkWithL3="true" L3AutoArpSHA="false" L3AutoArpSPA="false" L3AutoArpTHA="false" L3AutoArpTPA="false" L3AutoIpv6Source="false" L3AutoIpv6Destination="false" L3AutoIpv6PayloadLength="false" frameBlastingFrames="//@FlowTemplate.1/@frameBlastingFrames.0 //@FlowTemplate.3/@frameBlastingFrames.0" L4AllowPortOverride="true">
     <modifiers xsi:type="byteblowerguimodel_v1_3:UniqueFieldModifier" fieldLength="1" offset="0"/>
   </Frame>
-  <Frame name="FRAME_3" bytesHexString="0000000000000000000000000800450005CE02780000FE11B0A301010101010101011398139905BAC1E0457863656E7469732042797465426C6F7765722044656661756C74205061796C6F61642E000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000" L2AutoSourceMac="true" L2AutoDestMac="true" L3AutoSourceIp="true" L3AutoDestIp="true" L3AutoHeaderCheck="true" L3AutoTotLen="true" L3LinkWithL2="true" L4AutoTcpChecksum="false" L4AutoUdpChecksum="true" L4AutoTotLen="true" L4LinkWithL3="true" L3AutoArpSHA="false" L3AutoArpSPA="false" L3AutoArpTHA="false" L3AutoArpTPA="false" L3AutoIpv6Source="false" L3AutoIpv6Destination="false" L3AutoIpv6PayloadLength="false" frameBlastingFrames="//@FlowTemplate.2/@frameBlastingFrames.0" L4AllowPortOverride="true">
-    <modifiers xsi:type="byteblowerguimodel_v1_3:UniqueFieldModifier" fieldLength="1" offset="0"/>
-  </Frame>
-  <Frame name="FRAME_4" bytesHexString="0000000000000000000000000800450005CE02780000FE11B0A301010101010101011399139A05BAC1DE457863656E7469732042797465426C6F7765722044656661756C74205061796C6F61642E000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000" L2AutoSourceMac="true" L2AutoDestMac="true" L3AutoSourceIp="true" L3AutoDestIp="true" L3AutoHeaderCheck="true" L3AutoTotLen="true" L3LinkWithL2="true" L4AutoTcpChecksum="false" L4AutoUdpChecksum="true" L4AutoTotLen="true" L4LinkWithL3="true" L3AutoArpSHA="false" L3AutoArpSPA="false" L3AutoArpTHA="false" L3AutoArpTPA="false" L3AutoIpv6Source="false" L3AutoIpv6Destination="false" L3AutoIpv6PayloadLength="false" frameBlastingFrames="//@FlowTemplate.3/@frameBlastingFrames.0" L4AllowPortOverride="true">
-    <modifiers xsi:type="byteblowerguimodel_v1_3:UniqueFieldModifier" fieldLength="1" offset="0"/>
-  </Frame>
-  <ByteBlowerGuiPort name="WAN_PORT" theSourceOfFlow="//@Flow.0 //@Flow.2" theDestinationOfFlow="//@Flow.1 //@Flow.3" natted="false" mtu="1500">
+  <ByteBlowerGuiPort name="Port 1" theSourceOfFlow="//@Flow.0 //@Flow.2" theDestinationOfFlow="//@Flow.1 //@Flow.3" natted="false" mtu="1500">
     <layer2Configuration xsi:type="byteblowerguimodel_v1_3:EthernetConfiguration">
       <MacAddress>
         <bytes>0</bytes>
@@ -59,204 +53,57 @@
     </layer2Configuration>
     <ipv4Configuration isActive="true" addressConfiguration="Fixed">
       <IpAddress>
-        <bytes>80</bytes>
-        <bytes>5</bytes>
-        <bytes>-76</bytes>
+        <bytes>10</bytes>
+        <bytes>0</bytes>
+        <bytes>0</bytes>
+        <bytes>2</bytes>
+      </IpAddress>
+      <Netmask>
+        <bytes>-1</bytes>
+        <bytes>-1</bytes>
+        <bytes>-1</bytes>
+        <bytes>0</bytes>
+      </Netmask>
+      <DefaultGateway>
+        <bytes>10</bytes>
+        <bytes>0</bytes>
+        <bytes>0</bytes>
+        <bytes>1</bytes>
+      </DefaultGateway>
+    </ipv4Configuration>
+    <ByteBlowerGuiPortConfiguration physicalServerAddress="172.30.127.200" physicalInterfaceId="0" physicalPortId="0" physicalServerType="ByteBlower"/>
+  </ByteBlowerGuiPort>
+  <ByteBlowerGuiPort name="Port 2" theSourceOfFlow="//@Flow.1 //@Flow.3" theDestinationOfFlow="//@Flow.2 //@Flow.0" natted="false" mtu="1500">
+    <layer2Configuration xsi:type="byteblowerguimodel_v1_3:EthernetConfiguration">
+      <MacAddress>
+        <bytes>0</bytes>
+        <bytes>0</bytes>
+        <bytes>0</bytes>
+        <bytes>0</bytes>
+        <bytes>0</bytes>
+        <bytes>2</bytes>
+      </MacAddress>
+    </layer2Configuration>
+    <ipv4Configuration isActive="true" addressConfiguration="Fixed">
+      <IpAddress>
+        <bytes>10</bytes>
+        <bytes>0</bytes>
+        <bytes>0</bytes>
         <bytes>3</bytes>
       </IpAddress>
       <Netmask>
         <bytes>-1</bytes>
         <bytes>-1</bytes>
         <bytes>-1</bytes>
-        <bytes>-8</bytes>
-      </Netmask>
-      <DefaultGateway>
-        <bytes>80</bytes>
-        <bytes>5</bytes>
-        <bytes>-76</bytes>
-        <bytes>6</bytes>
-      </DefaultGateway>
-    </ipv4Configuration>
-    <ipv6Configuration isActive="false" addressConfiguration="Fixed" prefixLength="64">
-      <IpAddress>
-        <bytes>0</bytes>
-        <bytes>0</bytes>
-        <bytes>0</bytes>
-        <bytes>0</bytes>
-        <bytes>0</bytes>
-        <bytes>0</bytes>
-        <bytes>0</bytes>
-        <bytes>0</bytes>
-        <bytes>0</bytes>
-        <bytes>0</bytes>
-        <bytes>0</bytes>
-        <bytes>0</bytes>
-        <bytes>0</bytes>
-        <bytes>0</bytes>
-        <bytes>0</bytes>
-        <bytes>0</bytes>
-      </IpAddress>
-      <DefaultRouter>
-        <bytes>0</bytes>
-        <bytes>0</bytes>
-        <bytes>0</bytes>
-        <bytes>0</bytes>
-        <bytes>0</bytes>
-        <bytes>0</bytes>
-        <bytes>0</bytes>
-        <bytes>0</bytes>
-        <bytes>0</bytes>
-        <bytes>0</bytes>
-        <bytes>0</bytes>
-        <bytes>0</bytes>
-        <bytes>0</bytes>
-        <bytes>0</bytes>
-        <bytes>0</bytes>
-        <bytes>0</bytes>
-      </DefaultRouter>
-    </ipv6Configuration>
-    <ByteBlowerGuiPortConfiguration physicalServerAddress="10.113.137.22" physicalInterfaceId="0" physicalPortId="-1" physicalServerType="ByteBlower"/>
-  </ByteBlowerGuiPort>
-  <ByteBlowerGuiPort name="PORT_A" theSourceOfFlow="//@Flow.1" theDestinationOfFlow="//@Flow.0" natted="true" mtu="1500">
-    <layer2Configuration xsi:type="byteblowerguimodel_v1_3:EthernetConfiguration">
-      <MacAddress>
-        <bytes>0</bytes>
-        <bytes>0</bytes>
-        <bytes>0</bytes>
-        <bytes>0</bytes>
-        <bytes>0</bytes>
-        <bytes>69</bytes>
-      </MacAddress>
-    </layer2Configuration>
-    <ipv4Configuration isActive="true" addressConfiguration="Fixed">
-      <IpAddress>
-        <bytes>-64</bytes>
-        <bytes>-88</bytes>
-        <bytes>0</bytes>
-        <bytes>45</bytes>
-      </IpAddress>
-      <Netmask>
-        <bytes>-1</bytes>
-        <bytes>-1</bytes>
-        <bytes>-1</bytes>
         <bytes>0</bytes>
       </Netmask>
       <DefaultGateway>
-        <bytes>-64</bytes>
-        <bytes>-88</bytes>
+        <bytes>10</bytes>
+        <bytes>0</bytes>
         <bytes>0</bytes>
         <bytes>1</bytes>
       </DefaultGateway>
     </ipv4Configuration>
-    <ipv6Configuration isActive="false" addressConfiguration="Fixed" prefixLength="64">
-      <IpAddress>
-        <bytes>0</bytes>
-        <bytes>0</bytes>
-        <bytes>0</bytes>
-        <bytes>0</bytes>
-        <bytes>0</bytes>
-        <bytes>0</bytes>
-        <bytes>0</bytes>
-        <bytes>0</bytes>
-        <bytes>0</bytes>
-        <bytes>0</bytes>
-        <bytes>0</bytes>
-        <bytes>0</bytes>
-        <bytes>0</bytes>
-        <bytes>0</bytes>
-        <bytes>0</bytes>
-        <bytes>0</bytes>
-      </IpAddress>
-      <DefaultRouter>
-        <bytes>0</bytes>
-        <bytes>0</bytes>
-        <bytes>0</bytes>
-        <bytes>0</bytes>
-        <bytes>0</bytes>
-        <bytes>0</bytes>
-        <bytes>0</bytes>
-        <bytes>0</bytes>
-        <bytes>0</bytes>
-        <bytes>0</bytes>
-        <bytes>0</bytes>
-        <bytes>0</bytes>
-        <bytes>0</bytes>
-        <bytes>0</bytes>
-        <bytes>0</bytes>
-        <bytes>0</bytes>
-      </DefaultRouter>
-    </ipv6Configuration>
-    <ByteBlowerGuiPortConfiguration physicalServerAddress="10.113.137.22" physicalInterfaceId="1" physicalPortId="44" physicalServerType="ByteBlower"/>
-  </ByteBlowerGuiPort>
-  <ByteBlowerGuiPort name="EP01_2G" theSourceOfFlow="//@Flow.3" theDestinationOfFlow="//@Flow.2" natted="true" mtu="1500">
-    <layer2Configuration xsi:type="byteblowerguimodel_v1_3:EthernetConfiguration">
-      <MacAddress>
-        <bytes>0</bytes>
-        <bytes>0</bytes>
-        <bytes>0</bytes>
-        <bytes>0</bytes>
-        <bytes>0</bytes>
-        <bytes>24</bytes>
-      </MacAddress>
-    </layer2Configuration>
-    <ipv4Configuration isActive="true" addressConfiguration="Fixed">
-      <IpAddress>
-        <bytes>-64</bytes>
-        <bytes>-88</bytes>
-        <bytes>0</bytes>
-        <bytes>49</bytes>
-      </IpAddress>
-      <Netmask>
-        <bytes>-1</bytes>
-        <bytes>-1</bytes>
-        <bytes>-1</bytes>
-        <bytes>0</bytes>
-      </Netmask>
-      <DefaultGateway>
-        <bytes>-64</bytes>
-        <bytes>-88</bytes>
-        <bytes>0</bytes>
-        <bytes>1</bytes>
-      </DefaultGateway>
-    </ipv4Configuration>
-    <ipv6Configuration isActive="false" addressConfiguration="Fixed" prefixLength="64">
-      <IpAddress>
-        <bytes>0</bytes>
-        <bytes>0</bytes>
-        <bytes>0</bytes>
-        <bytes>0</bytes>
-        <bytes>0</bytes>
-        <bytes>0</bytes>
-        <bytes>0</bytes>
-        <bytes>0</bytes>
-        <bytes>0</bytes>
-        <bytes>0</bytes>
-        <bytes>0</bytes>
-        <bytes>0</bytes>
-        <bytes>0</bytes>
-        <bytes>0</bytes>
-        <bytes>0</bytes>
-        <bytes>0</bytes>
-      </IpAddress>
-      <DefaultRouter>
-        <bytes>0</bytes>
-        <bytes>0</bytes>
-        <bytes>0</bytes>
-        <bytes>0</bytes>
-        <bytes>0</bytes>
-        <bytes>0</bytes>
-        <bytes>0</bytes>
-        <bytes>0</bytes>
-        <bytes>0</bytes>
-        <bytes>0</bytes>
-        <bytes>0</bytes>
-        <bytes>0</bytes>
-        <bytes>0</bytes>
-        <bytes>0</bytes>
-        <bytes>0</bytes>
-        <bytes>0</bytes>
-      </DefaultRouter>
-    </ipv6Configuration>
-    <ByteBlowerGuiPortConfiguration physicalServerAddress="10.113.137.22" physicalInterfaceId="edbd3a99-2759-4651-bad4-cf8c51284e81" physicalPortId="-1" physicalServerType="MeetingPoint"/>
+    <ByteBlowerGuiPortConfiguration physicalServerAddress="172.30.127.200" physicalInterfaceId="0" physicalPortId="1" physicalServerType="ByteBlower"/>
   </ByteBlowerGuiPort>
 </byteblowerguimodel_v1_3:ByteBlowerProject>

@@ -1,0 +1,4 @@
+-r requirements-ci.txt
+
+# Testing
+pytest
