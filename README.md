@@ -64,6 +64,8 @@ The **Client Install Path** attribute is not relevant for the ByteBlower Control
 
 **Note:** If your CloudShell version does not support this shell, you should consider upgrading to a later version of CloudShell or contact customer support.
 
+* [ByteBlower CLT](https://setup.byteblower.com/software.html#CLT)
+
 ### Automation
 This section describes the automation (driver) associated with the data model. The shell’s driver is provided as part of the shell package. There are two types of automation processes, Autoload and Resource.  Autoload is executed when creating the resource in the **Inventory** dashboard, while resource commands are run in the sandbox.
 

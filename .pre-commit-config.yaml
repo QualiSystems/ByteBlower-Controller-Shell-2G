@@ -37,7 +37,13 @@ repos:
         types: [python]
         args: [
           --max-line-length=127,
-          '--disable=logging-fstring-interpolation,useless-super-delegation,unspecified-encoding',
+          --max-attributes=16,
+          --max-locals=40,
+          --max-branches=16,
+          --max-statements=80,
+          --max-args=8,
+          --min-public-methods=1,
+          '--disable=logging-fstring-interpolation,useless-super-delegation,unspecified-encoding,fixme',
           '--load-plugins=pylint_pytest',
           '--good-names=bb,ep,ip'
         ]

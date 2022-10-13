@@ -3,12 +3,13 @@ ByteBlower controller handler.
 """
 import logging
 import os
+import sys
 import tempfile
 import time
 import xml.etree.ElementTree as ET
 from ipaddress import AddressValueError, IPv4Address
 from pathlib import Path
-from typing import Dict
+from typing import Dict, List
 
 from byteblowerll import byteblower
 from byteblowerll.byteblower import TriggerBasicResultHistory
@@ -19,15 +20,11 @@ from cloudshell.traffic.tg import BYTEBLOWER_CHASSIS_MODEL, is_blocking
 from netaddr import EUI
 from netaddr.core import AddrFormatError
 
-from byteblower_data_model import ByteBlower_Controller_Shell_2G
+from byteblower_data_model import ByteBlower_Controller_Shell_2G, ByteBlowerError
 from byteblower_threads import EpCmd, EpThread, ServerThread
 
 BYTEBLOWER_PORT_MODEL = BYTEBLOWER_CHASSIS_MODEL + ".GenericTrafficGeneratorPort"
 BYTEBLOWER_ENDPOINT_MODEL = BYTEBLOWER_CHASSIS_MODEL + ".ByteBlowerEndPoint"
-
-
-class ByteBlowerError(Exception):
-    """Base exception for ByteBlower exceptions."""
 
 
 class ByteBlowerHandler:
@@ -37,7 +34,7 @@ class ByteBlowerHandler:
         """Initialize object variables, actual initialization is performed in initialize method."""
         self.logger: logging.Logger = None
         self.service: ByteBlower_Controller_Shell_2G = None
-        self.server_thread = None
+        self.server_thread: ServerThread = None
         self.eps_threads: Dict[str, EpThread] = {}
         self.reservation_ports: Dict[str, ReservedResourceInfo] = {}
         self.reservation_eps: Dict[str, ReservedResourceInfo] = {}
@@ -45,10 +42,12 @@ class ByteBlowerHandler:
         self.intended_tx = {}
         self.project: Path = None
         self.scenario = None
+        self.output = None
 
     def initialize(self, context: InitCommandContext, logger: logging.Logger) -> None:
         """Init ByteBlower."""
         self.logger = logger
+        self.logger.addHandler(logging.StreamHandler(sys.stdout))
         self.service = ByteBlower_Controller_Shell_2G.create_from_context(context)
 
     def cleanup(self) -> None:
@@ -76,7 +75,7 @@ class ByteBlowerHandler:
         for ep in get_resources_from_reservation(context, BYTEBLOWER_ENDPOINT_MODEL):
             logical_name = get_family_attribute(context, ep.Name, "Logical Name")
             self.reservation_eps[logical_name] = ep
-            xml_gui_port = self._find_xml_gui_port(xml_gui_ports, logical_name)
+            xml_gui_port = find_xml_gui_port(xml_gui_ports, logical_name)
             identifier = get_family_attribute(context, ep.Name, "Identifier")
             xml_gui_port.find("ByteBlowerGuiPortConfiguration").attrib["physicalInterfaceId"] = identifier
 
@@ -88,7 +87,7 @@ class ByteBlowerHandler:
         for port in get_resources_from_reservation(context, BYTEBLOWER_PORT_MODEL):
             logical_name = get_family_attribute(context, port.Name, "Logical Name")
             self.reservation_ports[logical_name] = port
-            xml_gui_port = self._find_xml_gui_port(xml_gui_ports, logical_name)
+            xml_gui_port = find_xml_gui_port(xml_gui_ports, logical_name)
             bb_port_name = port.Name.split("/")[-1]
 
             value = get_family_attribute(context, port.Name, "Mac Address")
@@ -147,12 +146,12 @@ class ByteBlowerHandler:
 
         self.intended_tx = get_intended_tx(self.project)
 
-    def start_traffic(self, context, blocking):
-        # check connected state of eps
+    def start_traffic(self, context: ResourceCommandContext, blocking: str) -> None:
+        """Start test - start ByteBlower-CLT thread with the requested project and start all endpoints threads."""
         self.validate_endpoint_wifi(context)
 
         log_file_name = self.logger.handlers[0].baseFilename
-        self.output = (os.path.splitext(log_file_name)[0] + "--output").replace("\\", "/")
+        self.output = Path(log_file_name.replace(".log", "--output")).as_posix()
 
         self.eps_threads = {}
         for name, ep in self.reservation_eps.items():
@@ -187,13 +186,15 @@ class ByteBlowerHandler:
             pass
 
     def stop_traffic(self) -> None:
+        """Stop test - stop ByteBlower-CLT thread and all endpoints threads."""
         if self.eps_threads:
             for ep_thread in self.eps_threads.values():
                 ep_thread.stop()
         if self.server_thread:
             self.server_thread.stop()
 
-    def get_test_status(self):
+    def get_test_status(self) -> str:
+        """Get test status."""
         if not self.server_thread:
             return "Not started"
         if self.server_thread.failed:
@@ -223,19 +224,12 @@ class ByteBlowerHandler:
             self.logger.debug(f"Port {name} stats: {rt_stats[name]}")
         return rt_stats
 
-    def get_statistics(self):
-        # todo: attach requested output file to reservation.
+    def get_statistics(self) -> str:
+        """Get post test accumulated statistics."""
         return self.output
 
-    def _find_xml_gui_port(self, xml_gui_ports, logical_name):
-        requested_xml_gui_ports = [p for p in xml_gui_ports if p.attrib["name"] == logical_name]
-        if not requested_xml_gui_ports:
-            raise ByteBlowerError(
-                f"Logical name {logical_name} not found in configuration ports {[p.attrib['name'] for p in xml_gui_ports]}"
-            )
-        return requested_xml_gui_ports[0]
-
-    def validate_endpoint_wifi(self, context):
+    def validate_endpoint_wifi(self, context: ResourceCommandContext) -> str:
+        """Validate all endpoints are connected to the WiFi of the meeting point."""
         disconnected_eps = []
         for name, ep in self.reservation_eps.items():
             ep_ip = get_family_attribute(context, ep.Name, "Address")
@@ -249,44 +243,13 @@ class ByteBlowerHandler:
             cmd = ["netsh", "wlan", "show", "interfaces", "|", "findstr", "State"]
 
             try:
-                outp = ep_cmd.run_command(cmd)
+                output = ep_cmd.run_command(cmd)
             except ByteBlowerError as err:
                 msg = f"{name} had issue running rpyc command {cmd}: {err}"
                 self.logger.debug(msg)
                 raise ByteBlowerError(msg) from err
             else:
-                if "disconnected" in outp:
-                    disconnected_eps.append((name, ep_ip))
-            finally:
-                ep_cmd.conn.close()
-                self.logger.debug(f"{name} command connection closed")
-
-        if disconnected_eps:
-            raise ByteBlowerError(f"The following endpoints are disconnected from wifi: {disconnected_eps}")
-
-        return "All Endpoints Connected to Wifi"
-
-    def connect_endpoints(self, context):
-        disconnected_eps = []
-        for name, ep in self.reservation_eps.items():
-            ep_ip = get_family_attribute(context, ep.Name, "Address")
-            try:
-                ep_cmd = EpCmd(self.logger, ep_ip, name)
-            except ByteBlowerError as err:
-                msg = f"{name} could not establish RPYC command connection: {err}"
-                self.logger.debug(msg)
-                raise ByteBlowerError(msg) from err
-
-            cmd = ["netsh", "wlan", "show", "interfaces", "|", "findstr", "State"]
-
-            try:
-                outp = ep_cmd.run_command(cmd)
-            except ByteBlowerError as err:
-                msg = f"{name} had issue running rpyc command {cmd}: {err}"
-                self.logger.debug(msg)
-                raise ByteBlowerError(msg) from err
-            else:
-                if "disconnected" in outp:
+                if "disconnected" in output:
                     disconnected_eps.append((name, ep_ip))
             finally:
                 ep_cmd.conn.close()
@@ -298,8 +261,18 @@ class ByteBlowerHandler:
         return "All Endpoints Connected to Wifi"
 
 
-def get_intended_tx(bbl_config_file_name):
+def find_xml_gui_port(xml_gui_ports: List[ET.Element], logical_name: str) -> ET.Element:
+    """Find the XML GUI port element representing the requested port."""
+    requested_xml_gui_ports = [p for p in xml_gui_ports if p.attrib["name"] == logical_name]
+    if not requested_xml_gui_ports:
+        raise ByteBlowerError(
+            f"Logical name {logical_name} not found in configuration ports {[p.attrib['name'] for p in xml_gui_ports]}"
+        )
+    return requested_xml_gui_ports[0]
 
+
+def get_intended_tx(bbl_config_file_name: str) -> Dict[str, str]:
+    """TODO."""
     xml = ET.parse(bbl_config_file_name)
     xml_root = xml.getroot()
     xml_gui_ports = xml_root.findall("ByteBlowerGuiPort")

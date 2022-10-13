@@ -3,6 +3,10 @@ from cloudshell.shell.core.driver_context import ResourceCommandContext, AutoLoa
 from collections import defaultdict
 
 
+class ByteBlowerError(Exception):
+    """Base exception for ByteBlower exceptions."""
+
+
 class LegacyUtils(object):
     def __init__(self):
         self._datamodel_clss_dict = self.__generate_datamodel_classes_dict()

@@ -1,6 +1,7 @@
 """
 ByteBlower controller shell driver API. The business logic is implemented in byteblower_handler.py.
 """
+# pylint: disable=unused-argument
 from cloudshell.shell.core.driver_context import CancellationContext, InitCommandContext, ResourceCommandContext
 from cloudshell.traffic.tg import TgControllerDriver, enqueue_keep_alive
 
