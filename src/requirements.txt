@@ -1,5 +1,5 @@
 psutil
-rpyc==4.1.2
+rpyc==6.0.0
 
 cloudshell-logging==1.0.3
 cloudshell-orch-core>=3.3.0.0,<3.4.0.0
